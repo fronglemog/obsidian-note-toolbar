@@ -4,7 +4,7 @@ import { IItem } from "./IItem";
 
 /**
  * > [!note]
- * > This documentation is for version `1.25.07`.
+ * > This documentation is for version `1.25.14`.
  * 
  * The Note Toolbar API provides toolbar access, and the ability to show UI (suggesters, prompts, menus, and modals). The latter enables Dataview JS, JS Engine, or Templater scripts to ask for information, or to show helpful text.
  * 
@@ -229,7 +229,7 @@ export interface INoteToolbarApi<T> {
     /**
      * Shows a suggester modal and waits for the user's selection.
      * 
-     * @param values Array of strings representing the text that will be displayed for each item in the suggester prompt. This can also be a function that maps an item to its text representation. Rendered as markdown: optionally mix in Obsidian and plugin markdown (e.g., Iconize) to have it rendered
+     * @param values Array of strings representing the text that will be displayed for each item in the suggester prompt. This can also be a function that maps an item to its text representation. Markdown formatting is supported: optionally mix in Obsidian and plugin markdown (e.g., Iconize) to have it rendered
      * @param keys Optional array containing the keys of each item in the correct order. If not provided or `null`, values are returned on selection.
      * @param options Optional display options.
      * @returns The selected value, or corresponding key if keys are provided.
@@ -325,7 +325,7 @@ export interface NtbModalOptions {
      */
     editable?: boolean;
     /**
-     * Optional title for the modal, rendered as markdown.
+     * Optional title for the modal, with markdown formatting supported.
      */
     title?: string;
     /**
@@ -340,7 +340,7 @@ export interface NtbModalOptions {
  */
 export interface NtbPromptOptions {
     /**
-     * Optional text shown above the text field, rendered as markdown. Default is no label.
+     * Optional text shown above the text field, with markdown formatting supported. Default is no label.
      */
     label?: string;
     /**
@@ -367,6 +367,10 @@ export interface NtbPromptOptions {
  */
 export interface NtbSuggesterOptions {
     /**
+     * If set to `true`, the user can input a custom value that is not in the list of suggestions (submitted with a modifier key + `Enter`). Default is `false`.
+     */
+    allowCustomInput?: boolean;
+    /**
      * Optional CSS class(es) to add to the component.
      */
     class?: string;
@@ -374,6 +378,10 @@ export interface NtbSuggesterOptions {
      * Optionally pre-set the suggester's input with this value. Matching results will be shown, as if you typed in that string yourself (assuming the string appears in the list of options provided). If not provided, no default is set.
      */
     default?: string;
+    /**
+     * Optional text shown above the input field, with markdown formatting supported. Default is no label.
+     */
+    label?: string;
     /**
      * Optional limit of the number of items rendered at once (useful to improve performance when displaying large lists).
      */

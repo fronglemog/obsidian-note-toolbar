@@ -948,19 +948,17 @@ export default class NoteToolbarPlugin extends Plugin {
 	async renderToolbarAsMenu(
 		toolbar: ToolbarSettings, 
 		activeFile: TFile | null, 
-		showEditToolbar: boolean = false, 
-		showToolbarName: boolean = false
+		showEditToolbar: boolean = false
 	): Promise<Menu> {
 
 		let menu = new Menu();
 
-		if (showToolbarName) {
+		if (Platform.isMobile) {
 			menu.addItem((item: MenuItem) => {
 				item
 					.setTitle(toolbar.name)
 					.setIsLabel(true)
 			});
-			menu.addSeparator();
 		}
 
 		await this.renderMenuItems(menu, toolbar, activeFile);
@@ -1983,6 +1981,14 @@ export default class NoteToolbarPlugin extends Plugin {
 
 		if (toolbarSettings !== undefined) {
 
+			if (Platform.isPhone) {
+				contextMenu.addItem((item: MenuItem) => {
+					item
+						.setTitle(toolbarSettings.name)
+						.setIsLabel(true)
+				});
+			}
+
 			//
 			// position
 			//
@@ -2092,36 +2098,6 @@ export default class NoteToolbarPlugin extends Plugin {
 				}
 			}
 
-			contextMenu.addSeparator();
-
-			// share
-			contextMenu.addItem((item: MenuItem) => {
-				item
-					.setIcon('share')
-					.setTitle(t('export.label-share'))
-					.onClick(async () => {
-						if (toolbarSettings) {
-							const shareUri = await this.protocolManager.getShareUri(toolbarSettings);
-							let shareModal = new ShareModal(this, shareUri, toolbarSettings);
-							shareModal.open();
-						}
-					});
-			});
-
-			// copy as callout
-			contextMenu.addItem((item: MenuItem) => {
-				item
-					.setTitle(t('export.label-callout'))
-					.setIcon('copy')
-					.onClick(async (menuEvent) => {
-						if (toolbarSettings) {
-							let calloutExport = await exportToCallout(this, toolbarSettings, this.settings.export);
-							navigator.clipboard.writeText(calloutExport);
-							new Notice(learnMoreFr(t('export.notice-completed'), 'Creating-callouts-from-toolbars'));
-						}
-					})
-				});
-
 		}
 		
 		contextMenu.addSeparator();
@@ -2195,6 +2171,42 @@ export default class NoteToolbarPlugin extends Plugin {
 					.setTitle(t('toolbar.menu-swap-toolbar'))
 					.onClick(() => this.commands.swapToolbar());
 			});
+		}
+
+		if (toolbarSettings !== undefined) {
+
+			contextMenu.addSeparator();
+
+			// share
+			contextMenu.addItem((item: MenuItem) => {
+				item
+					.setIcon('share')
+					.setTitle(t('export.label-share'))
+					.onClick(async () => {
+						if (toolbarSettings) {
+							const shareUri = await this.protocolManager.getShareUri(toolbarSettings);
+							let shareModal = new ShareModal(this, shareUri, toolbarSettings);
+							shareModal.open();
+						}
+					});
+			});
+
+			// copy as callout
+			contextMenu.addItem((item: MenuItem) => {
+				item
+					.setTitle(t('export.label-callout'))
+					.setIcon('copy')
+					.onClick(async (menuEvent) => {
+						if (toolbarSettings) {
+							let calloutExport = await exportToCallout(this, toolbarSettings, this.settings.export);
+							navigator.clipboard.writeText(calloutExport);
+							new Notice(learnMoreFr(t('export.notice-completed'), 'Creating-callouts-from-toolbars'));
+						}
+					})
+				});
+
+			contextMenu.addSeparator();
+
 		}
 
 		contextMenu.addItem((item: MenuItem) => {
