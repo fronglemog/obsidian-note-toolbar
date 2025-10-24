@@ -163,6 +163,7 @@ export default class NoteToolbarPlugin extends Plugin {
 			this.addCommand({ id: 'hide-properties', name: t('command.name-hide-properties'), callback: async () => this.commands.toggleProps('hide') });
 			this.addCommand({ id: 'fold-properties', name: t('command.name-fold-properties'), callback: async () => this.commands.toggleProps('fold') });
 			this.addCommand({ id: 'toggle-properties', name: t('command.name-toggle-properties'), callback: async () => this.commands.toggleProps('toggle') });
+			this.addCommand({ id: 'toggle-lock-callouts', name: t('command.name-toggle-lock-callouts'), callback: async () => this.commands.toggleLockCallouts() });
 
 			// prototcol handler
 			this.registerObsidianProtocolHandler("note-toolbar", async (data) => this.protocolManager.handle(data));
@@ -185,14 +186,17 @@ export default class NoteToolbarPlugin extends Plugin {
 	}
 
 	/**
-	 * When this plugin is unloaded (e.g., disabled in settings, or Obsidian is restarted):
-	 * removes all toolbars.
+	 * Cleanup when the plugin is unloaded (e.g., disabled in settings, or Obsidian is restarted).
 	 */
 	async onunload() {
-		this.getAllToolbarEl().forEach((toolbarEl) => {
-			toolbarEl.remove();
-		});
+
+		// remove any toolbars
+		this.getAllToolbarEl().forEach((toolbarEl) => { toolbarEl.remove(); });
+		// remove the global API
+		if (window["ntb"]) delete window["ntb"];
+
 		this.debug('UNLOADED');
+
 	}
  
 	/**
@@ -201,7 +205,7 @@ export default class NoteToolbarPlugin extends Plugin {
 	 * More info: https://github.com/chrisgurney/obsidian-note-toolbar/issues/340
 	 */
 	// async onExternalSettingsChange(): Promise<void> {
-	// 	const loadSettingsChanges = localStorage.getItem(LocalVar.LoadSettings) === 'true';
+	// 	const loadSettingsChanges = this.app.loadLocalStorage(LocalVar.LoadSettings) === 'true';
 	// 	if (loadSettingsChanges) {
 	// 		this.debug('onExternalSettingsChange: loading settings changes...');
 	// 		const loaded_settings = await this.loadData();
@@ -417,7 +421,8 @@ export default class NoteToolbarPlugin extends Plugin {
 						const matchingToolbar = ignoreToolbar ? undefined : this.settingsManager.getToolbarByName(ntbPropValue);
 						if (!matchingToolbar && !ignoreToolbar) {
 							const notice = new Notice(t('notice.warning-no-matching-toolbar', { toolbar: ntbPropValue }), 7500);
-							this.registerDomEvent(notice.noticeEl, 'click', async () => {
+							notice.messageEl.addClass('note-toolbar-notice-with-cta');
+							this.registerDomEvent(notice.messageEl, 'click', async () => {
 								const newToolbar = await this.settingsManager.newToolbar(ntbPropValue);
 								this.settingsManager.openToolbarSettings(newToolbar);
 							});
@@ -1171,12 +1176,12 @@ export default class NoteToolbarPlugin extends Plugin {
 		if (clickedItemEl) {
 			let elemRect = clickedItemEl.getBoundingClientRect();
 			menuPos = { x: elemRect.x, y: elemRect.bottom, overlap: true, left: false };
-			localStorage.setItem(LocalVar.MenuPos, JSON.stringify(menuPos));
+			this.app.saveLocalStorage(LocalVar.MenuPos, JSON.stringify(menuPos));
 		}
 
 		// if we don't have a position yet, try to get it from the previous menu
 		if (!menuPos) {
-			let previousPosData = localStorage.getItem(LocalVar.MenuPos);
+			let previousPosData = this.app.loadLocalStorage(LocalVar.MenuPos);
 			menuPos = previousPosData ? JSON.parse(previousPosData) : undefined;
 		}
 
@@ -1211,7 +1216,7 @@ export default class NoteToolbarPlugin extends Plugin {
 
 		if (this.settings.keepPropsState) {
 			// restore properties to the state they were before
-			const propsState = localStorage.getItem(LocalVar.PropsState);
+			const propsState = this.app.loadLocalStorage(LocalVar.PropsState);
 			if (propsState && ['toggle', 'show', 'hide', 'fold'].includes(propsState)) {
 				this.commands.toggleProps(propsState as PropsState, true);
 			}
@@ -1316,7 +1321,7 @@ export default class NoteToolbarPlugin extends Plugin {
 	 * @param activeItemId UUID of the item that was clicked/tapped; provide nothing to unset.
 	 */
 	updateActiveToolbarItem(activeItemId?: string): void {
-		localStorage.setItem(LocalVar.ActiveItem, activeItemId ?? '');
+		this.app.saveLocalStorage(LocalVar.ActiveItem, activeItemId ?? '');
 	}
 
 	/*************************************************************************
@@ -1340,10 +1345,12 @@ export default class NoteToolbarPlugin extends Plugin {
 			// (not supported for Note Toolbar Callouts)
 			this.updateActiveToolbarItem();
 
-			// TODO: optionally ignore clicks that expand the callout
-			// if (clickedCalloutEl.hasAttribute('data-callout-fold')) {
-			// 	e.preventDefault();
-			// }
+			// prevent expansion of callouts if setting is enabled
+			if (this.settings.lockCallouts) {
+				if (clickedCalloutEl.hasAttribute('data-callout-fold')) {
+					e.preventDefault();
+				}
+			}
 
 			const clickedItemEl = target?.closest('.callout[data-callout="note-toolbar"] a.external-link');
 			if (clickedItemEl) {
@@ -1818,7 +1825,7 @@ export default class NoteToolbarPlugin extends Plugin {
 							left: (fabPos === PositionType.FabLeft ? false : true)
 						};
 						// store menu position for sub-menu positioning
-						localStorage.setItem(LocalVar.MenuPos, JSON.stringify(menuPos));
+						this.app.saveLocalStorage(LocalVar.MenuPos, JSON.stringify(menuPos));
 						menu.showAtPosition(menuPos);
 					}
 				});
@@ -2223,7 +2230,7 @@ export default class NoteToolbarPlugin extends Plugin {
 	 * @returns last activated toolbar item ID, or null if it can't be found.
 	 */
 	getActiveItemId(): string | null {
-		return localStorage.getItem(LocalVar.ActiveItem);
+		return this.app.loadLocalStorage(LocalVar.ActiveItem);
 	}
 
 	/**

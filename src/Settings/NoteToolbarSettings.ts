@@ -54,11 +54,11 @@ export const IGNORE_PLUGIN_IDS = ['app', 'bookmarks', 'editor', 'file-explorer',
  TYPES
  ******************************************************************************/
 
-export enum ComponentType {
+export const enum ComponentType {
 	Icon = 'icon',
 	Label = 'label'
 }
-export enum FileType {
+export const enum FileType {
 	Audio = 'audio',
 	Bases = 'bases',
 	Canvas = 'canvas',
@@ -67,6 +67,7 @@ export enum FileType {
 	Pdf = 'pdf',
 	Video = 'video'
 }
+// note: can't make this a constant as it's used in Object.values()
 export enum ItemType {
 	Break = 'break',
 	Command = 'command',
@@ -82,14 +83,14 @@ export enum ItemType {
 	Templater = 'templater-obsidian',
 	Uri = 'uri'
 }
-export enum PlatformType {
+export const enum PlatformType {
 	All = 'all',
 	Desktop = 'desktop',
 	Tablet = 'tablet',
 	Mobile = 'mobile',
 	None = 'none'
 }
-export enum PositionType {
+export const enum PositionType {
 	Bottom = 'bottom',
 	FabLeft = 'fabl',
 	FabRight = 'fabr',
@@ -97,12 +98,12 @@ export enum PositionType {
 	Props = 'props',
 	Top = 'top'
 }
-export enum RibbonAction {
+export const enum RibbonAction {
 	ItemSuggester = 'item-suggester',
 	ToolbarSuggester = 'toolbar-suggester',
 	Toolbar = 'toolbar'
 }
-export enum SettingType {
+export const enum SettingType {
 	Args = 'args',
 	Command = 'command',
 	File = 'file',
@@ -112,7 +113,7 @@ export enum SettingType {
 	TextArea = 'textarea',
 	Toolbar = 'toolbar',
 }
-export enum DefaultStyleType {
+export const enum DefaultStyleType {
 	Autohide = 'autohide',
 	Border = 'border',
 	Button = 'button',
@@ -125,7 +126,7 @@ export enum DefaultStyleType {
 	Sticky = 'sticky',
 	Tab = 'tab'
 }
-export enum MobileStyleType {
+export const enum MobileStyleType {
 	Border = 'mbrder',
 	NoBorder = 'mnbrder',
 	Button = 'mbtn',
@@ -163,13 +164,13 @@ export const SettingFieldItemMap: Record<ItemType, SettingType> = {
 	[ItemType.Uri]: SettingType.Text,
 	[ItemType.Templater]: SettingType.Script
 }
-export enum ViewType {
+export const enum ViewType {
 	All = 'all',
 	Preview = 'preview',
 	Source = 'source'
 }
 
-export enum LocalVar {
+export const enum LocalVar {
 	ActiveItem = 'note-toolbar-active-item',
 	LoadSettings = 'note-toolbar-load-settings-changes',
 	MenuPos = 'note-toolbar-menu-pos',
@@ -181,6 +182,7 @@ export enum LocalVar {
 
 export type PropsState = 'show' | 'hide' | 'fold' | 'toggle';
 
+// note: can't make this a constant as it's used in Object.values()
 export enum CalloutAttr {
     Command = 'data-command',
     CommandNtb = 'data-ntb-command', // for backwards-compatibility
@@ -198,11 +200,11 @@ export interface OnboardingState {
     [id: string]: boolean;
 }
 
-export enum ToolbarStyle {
+export const enum ToolbarStyle {
 	ItemFocused = 'tbar-item-focused'
 }
 
-export enum ErrorBehavior {
+export const enum ErrorBehavior {
 	Display = 'display',
 	Report = 'report',
 	Ignore = 'ignore'
@@ -215,6 +217,7 @@ export interface NoteToolbarSettings {
 	folderMappings: Array<FolderMapping>;
 	icon: string;
 	keepPropsState: boolean;
+	lockCallouts: boolean;
 	onboarding: OnboardingState;
 	ribbonAction: RibbonAction;
 	rules: Array<ToolbarRule>;
@@ -242,6 +245,7 @@ export const DEFAULT_SETTINGS: NoteToolbarSettings = {
 	folderMappings: [],
 	icon: "circle-ellipsis",
 	keepPropsState: false,
+	lockCallouts: false,
 	onboarding: {},
 	ribbonAction: RibbonAction.Toolbar,
 	rules: [],
@@ -383,14 +387,15 @@ export interface FolderMapping {
 	toolbar: string;
 }
 
-export enum RuleConjunctionType {
+export const enum RuleConjunctionType {
 	And = 'and',
 	Or = 'or'
 }
+// note: can't make this a constant as it's used in Object.entries()
 export enum RuleConditionType {
 	Folder = 'folder'
 }
-export enum RuleOperatorType {
+export const enum RuleOperatorType {
 	Is = 'is',
 	IsNot = 'isNot',
 	StartsWith = 'startsWith'

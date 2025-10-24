@@ -430,8 +430,8 @@ export default class ToolbarItemUi {
                                     t('setting.use-item-command.notice-command-added', { command: commandName }) +
                                     (Platform.isPhone ? '' : '\n' + t('setting.use-item-command.notice-command-added-hotkeys', { cta: Platform.isDesktop ? t('notice.cta-click') : t('notice.cta-tap') }));
                                 const notice = new Notice(message, 10000);
-                                const noticeEl = notice.noticeEl;
-                                noticeEl.style.cursor = 'pointer';
+                                const noticeEl = notice.messageEl;
+                                noticeEl.addClass('note-toolbar-notice-with-cta');
                                 this.plugin.registerDomEvent(noticeEl, 'click', async () => {
                                     notice.hide();
                                     this.parent.close();
@@ -1153,7 +1153,7 @@ export default class ToolbarItemUi {
         toolbarItem?: ToolbarItemSettings): Promise<boolean> 
     {
 
-        enum Status {
+        const enum Status {
             Empty = 'empty',
             Invalid = 'invalid',
             Valid = 'valid'
