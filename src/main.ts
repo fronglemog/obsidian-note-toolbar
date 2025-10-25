@@ -499,7 +499,7 @@ export default class NoteToolbarPlugin extends Plugin {
 	 */
 	async checkAndRenderToolbar(file: TFile, frontmatter: FrontMatterCache | undefined, view?: ItemView): Promise<void> {
 
-		this.debug('checkAndRenderToolbar: file:', file.name, 'view:', view);
+		this.debug('checkAndRenderToolbar: file:', file.name, 'view:', getViewId(view));
 
 		const viewId = getViewId(view);
 		if (viewId) {	
@@ -543,7 +543,7 @@ export default class NoteToolbarPlugin extends Plugin {
 	 */
 	async renderToolbar(toolbar: ToolbarSettings, file: TFile | null, view?: ItemView): Promise<void> {
 
-		this.debug("renderToolbar:", toolbar.name);
+		this.debugGroup(`renderToolbar: ${toolbar.name}`);
 
 		// get position for this platform; default to 'props' if it's not set for some reason (should not be the case)
 		let position;
@@ -554,12 +554,16 @@ export default class NoteToolbarPlugin extends Plugin {
 		// if no view is provided, get the active view
 		if (!view) view = this.app.workspace.getActiveViewOfType(MarkdownView) ?? undefined;
 		if (!view) view = this.app.workspace.getActiveViewOfType(ItemView) ?? undefined;
-		if (!view) return;
+		if (!view) {
+			this.debugGroupEnd();
+			return;
+		}
 
 		if (!(view instanceof MarkdownView)) {
 			const isToolbarVisible = checkToolbarForItemView(this, view);
 			if (!isToolbarVisible) {
 				this.debug("🛑 renderToolbar: nothing to render in this view");
+				this.debugGroupEnd();
 				return;
 			}
 			if (position === 'props') position = 'top';
@@ -625,6 +629,7 @@ export default class NoteToolbarPlugin extends Plugin {
 		if (useLaunchpad && noteToolbarElement) {
 			noteToolbarElement.addClass('note-toolbar-launchpad');
 			view.contentEl.insertAdjacentElement('afterbegin', embedBlock);
+			this.debugGroupEnd();
 			return;
 		}
 
@@ -668,7 +673,8 @@ export default class NoteToolbarPlugin extends Plugin {
 				break;
 		}
 
-		this.debug(`⭐️ renderToolbar: Rendered ${toolbar.name} in view:`, getViewId(view));
+		this.debug(`⭐️ Rendered: ${toolbar.name} in view:`, getViewId(view));
+		this.debugGroupEnd();
 
 	}
 	
@@ -967,11 +973,11 @@ export default class NoteToolbarPlugin extends Plugin {
 			menu.addSeparator();
 			menu.addItem((item: MenuItem) => {
 				item
-					.setTitle(t('toolbar.menu-edit-toolbar', { toolbar: toolbar.name }))
+					.setTitle(t('toolbar.menu-edit-toolbar', { toolbar: toolbar.name, interpolation: { escapeValue: false } }))
 					.setIcon('rectangle-ellipsis')
 					.onClick((menuEvent) => {
 						const modal = new ToolbarSettingsModal(this.app, this, null, toolbar as ToolbarSettings);
-						modal.setTitle(t('setting.title-edit-toolbar', { toolbar: toolbar.name }));
+						modal.setTitle(t('setting.title-edit-toolbar', { toolbar: toolbar.name, interpolation: { escapeValue: false } }));
 						modal.open();
 					});
 			});
@@ -1099,7 +1105,6 @@ export default class NoteToolbarPlugin extends Plugin {
 	async renderToolbarForView(view?: ItemView) {
 
 		const toolbarView = view ? view : this.app.workspace.getActiveViewOfType(ItemView);
-		this.debug('renderToolbarForView', toolbarView);
 
 		let activeFile: TFile | null = null;
 		if (!toolbarView) return;
@@ -1131,6 +1136,7 @@ export default class NoteToolbarPlugin extends Plugin {
 				}
 			}
 		}
+
 	}
 
 	/**
@@ -1209,7 +1215,7 @@ export default class NoteToolbarPlugin extends Plugin {
 	 */
 	async updateToolbar(toolbar: ToolbarSettings, activeFile: TFile | null, view?: ItemView) {
 
-		this.debug('updateToolbar:', toolbar.name);
+		this.debugGroup(`updateToolbar: ${toolbar.name}`);
 		const toolbarView = view ? view : this.app.workspace.getActiveViewOfType(ItemView);
 
 		if (this.settings.keepPropsState) {
@@ -1225,6 +1231,7 @@ export default class NoteToolbarPlugin extends Plugin {
 
 		// no need to run update for certain positions
 		if ([PositionType.FabLeft, PositionType.FabRight, PositionType.Hidden, undefined].includes(currentPosition)) {
+			this.debugGroupEnd();
 			return;
 		}
 
@@ -1232,6 +1239,7 @@ export default class NoteToolbarPlugin extends Plugin {
 		let toolbarElName = toolbarEl?.getAttribute("data-name");
 		let toolbarElUpdated = toolbarEl?.getAttribute("data-updated");
 		if (toolbarEl === null || toolbar.name !== toolbarElName || toolbar.updated !== toolbarElUpdated) {
+			this.debugGroupEnd();
 			return;
 		}
 
@@ -1298,6 +1306,8 @@ export default class NoteToolbarPlugin extends Plugin {
 		if (currentPosition === PositionType.Bottom) {
 			this.renderBottomToolbarStyles(toolbar, toolbarEl);
 		}
+
+		this.debugGroupEnd();
 
 	}
 
@@ -2120,7 +2130,9 @@ export default class NoteToolbarPlugin extends Plugin {
 			contextMenu.addItem((item: MenuItem) => {
 				item
 					.setIcon('lucide-pen-box')
-					.setTitle(itemText ? t('toolbar.menu-edit-item', { text: itemText }) : t('toolbar.menu-edit-item_none'))
+					.setTitle(itemText 
+						? t('toolbar.menu-edit-item', { text: itemText, interpolation: { escapeValue: false } }) 
+						: t('toolbar.menu-edit-item_none'))
 					.onClick(async () => {
 						if (toolbarSettings) {
 							const itemModal = new ItemModal(this, toolbarSettings, toolbarItem);
@@ -2135,10 +2147,10 @@ export default class NoteToolbarPlugin extends Plugin {
 					contextMenu.addItem((item: MenuItem) => {
 						item
 							.setIcon('square-menu')
-							.setTitle(t('toolbar.menu-edit-menu', { toolbar: menuToolbar.name }))
+							.setTitle(t('toolbar.menu-edit-menu', { toolbar: menuToolbar.name, interpolation: { escapeValue: false } }))
 							.onClick(async () => {
 								const modal = new ToolbarSettingsModal(this.app, this, null, menuToolbar as ToolbarSettings);
-								modal.setTitle(t('setting.title-edit-toolbar', { toolbar: menuToolbar.name }));
+								modal.setTitle(t('setting.title-edit-toolbar', { toolbar: menuToolbar.name, interpolation: { escapeValue: false } }));
 								modal.open();
 							});
 					});					
@@ -2152,11 +2164,11 @@ export default class NoteToolbarPlugin extends Plugin {
 		if (toolbarSettings !== undefined) {
 			contextMenu.addItem((item: MenuItem) => {
 				item
-					.setTitle(t('toolbar.menu-edit-toolbar', { toolbar: toolbarSettings?.name }))
+					.setTitle(t('toolbar.menu-edit-toolbar', { toolbar: toolbarSettings?.name, interpolation: { escapeValue: false } }))
 					.setIcon('rectangle-ellipsis')
 					.onClick((menuEvent) => {
 						const modal = new ToolbarSettingsModal(this.app, this, null, toolbarSettings as ToolbarSettings);
-						modal.setTitle(t('setting.title-edit-toolbar', { toolbar: toolbarSettings?.name }));
+						modal.setTitle(t('setting.title-edit-toolbar', { toolbar: toolbarSettings?.name, interpolation: { escapeValue: false } }));
 						modal.open();
 					});
 			  });
@@ -2335,6 +2347,8 @@ export default class NoteToolbarPlugin extends Plugin {
 	 */
 	private removeToolbarIfNeeded(correctToolbar: ToolbarSettings | undefined, view?: ItemView): boolean {
 
+		this.debugGroup('removeToolbarIfNeeded');
+
 		let toolbarRemoved: boolean = false;
 
 		// get toolbar elements in current view, or active view if not provided
@@ -2357,6 +2371,7 @@ export default class NoteToolbarPlugin extends Plugin {
 			toolbarRemoved = true;
 		}
 
+		this.debugGroupEnd();
 		return toolbarRemoved;
 
 	}
@@ -2403,6 +2418,28 @@ export default class NoteToolbarPlugin extends Plugin {
 	}
 
 	/*************************************************************************
+	 * DEBUGGING
+	 *************************************************************************/
+
+    /**
+     * Utility for debug logging.
+     * @param message Message to output to console for debugging.
+     */
+    debug(message?: any, ...optionalParams: any[]): void {
+        this.settings.debugEnabled && console.debug(message, ...optionalParams);
+        // const stack = new Error().stack;
+        // this.settings.debugEnabled && console.debug('Call stack:', stack);
+    }
+
+	debugGroup(label: string): void {
+		this.settings.debugEnabled && console.group(label);
+	}
+
+	debugGroupEnd(): void {
+		this.settings.debugEnabled && console.groupEnd();
+	}
+
+	/*************************************************************************
 	 * UTILITIES
 	 *************************************************************************/
 
@@ -2422,16 +2459,6 @@ export default class NoteToolbarPlugin extends Plugin {
 			this.isInternalPluginEnabled[key] = internalPlugins[key]?.enabled ?? false;
 		});
 	}
-
-    /**
-     * Utility for debug logging.
-     * @param message Message to output to console for debugging.
-     */
-    debug(message?: any, ...optionalParams: any[]): void {
-        this.settings.debugEnabled && console.debug(message, ...optionalParams);
-        // const stack = new Error().stack;
-        // this.settings.debugEnabled && console.debug('Call stack:', stack);
-    }
 
 	/**
 	 * Returns the Adapter for the provided item type, if the plugin is available and the adapter instance exists.
