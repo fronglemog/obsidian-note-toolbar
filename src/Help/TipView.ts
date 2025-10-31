@@ -1,5 +1,5 @@
 import TipItems from "Help/tips.json";
-import { Component, ItemView, MarkdownRenderer, Platform, setIcon, setTooltip, ViewStateResult, WorkspaceLeaf } from "obsidian";
+import { Component, ItemView, MarkdownRenderer, requestUrl, setIcon, setTooltip, ViewStateResult, WorkspaceLeaf } from "obsidian";
 import { t, URL_TIPS, VIEW_TYPE_TIP } from "Settings/NoteToolbarSettings";
 import NoteToolbarPlugin from "main";
 import { renderGalleryItems } from "Help/Gallery/GalleryView";
@@ -42,12 +42,14 @@ export class TipView extends ItemView {
         const bannerIconEl = bannerEl.createDiv();
         setIcon(bannerIconEl, tip.icon);
         const bannerTitleEl = bannerEl.createDiv();
-        MarkdownRenderer.render(this.plugin.app, `# ${(tip as TipType).title[language]}`, bannerTitleEl, '/', this.plugin);
+        const bannerTitleComponent = new Component();
+        MarkdownRenderer.render(this.plugin.app, `# ${(tip as TipType).title[language]}`, bannerTitleEl, '/', bannerTitleComponent);
         const bannerDescEl = bannerEl.createDiv();
-        MarkdownRenderer.render(this.plugin.app, `${(tip as TipType).description[language]}`, bannerDescEl, '/', this.plugin);
+        const bannerDescComponent = new Component();
+        MarkdownRenderer.render(this.plugin.app, `${(tip as TipType).description[language]}`, bannerDescEl, '/', bannerDescComponent);
 
         const contentEl = contentDiv.createDiv();
-        contentEl.addClass('markdown-preview-view', 'note-toolbar-setting-whatsnew-content', 'is-readable-line-width');
+        contentEl.addClass('markdown-preview-view', 'note-toolbar-setting-tip-content', 'is-readable-line-width');
 		this.renderSkeleton(contentEl);
 
         // fetch and display the content
@@ -70,7 +72,8 @@ export class TipView extends ItemView {
         }
 
         const rootPath = this.plugin.app.vault.getRoot().path;
-        MarkdownRenderer.render(this.plugin.app, tipText, contentEl, rootPath, new Component());
+        const component = new Component();
+        MarkdownRenderer.render(this.plugin.app, tipText, contentEl, rootPath, component);
 
         this.renderTipVideos(contentEl);
         this.renderGalleryCallouts(contentEl, tip.color as ColorType);
@@ -123,17 +126,16 @@ export class TipView extends ItemView {
      */
     async getTip(filename: string, language: string = 'en'): Promise<string | null> {
         let url = `${URL_TIPS}/${language}/${filename}.md`;
-        let res = await fetch(url);
+        let res = await requestUrl(url);
     
-        if (!res.ok && language !== 'en') {
+        if ((!res || res.status !== 200) && language !== 'en') {
             url = `${URL_TIPS}/en/${filename}.md`;
-            res = await fetch(url);
+            res = await requestUrl(url);
         }
     
-        if (!res.ok) return null;
+        if (!res || res.status !== 200) return null;
     
-        const body = await res.text();
-        return body;
+        return res.text;
     }
 
     /**
@@ -206,7 +208,7 @@ export class TipView extends ItemView {
             const overlayEl = wrapperEl.createEl('div', 'note-toolbar-setting-help-video-overlay');
             const playButtonEl = overlayEl.createEl('button', 'note-toolbar-setting-help-video-play');
             setIcon(playButtonEl, 'play');
-            playButtonEl.style.display = 'none';
+            playButtonEl.hide();
 
             overlayEl.onclick = () => {
                 if (videoEl.paused) {
@@ -219,7 +221,7 @@ export class TipView extends ItemView {
             };
 
             videoEl.addEventListener('loadedmetadata', () => {
-                playButtonEl.style.display = '';
+                playButtonEl.hide();
             });
 
         });

@@ -46,18 +46,19 @@ export class NtbModal extends Modal {
     async onOpen(): Promise<void> {
         if (this.title) {
             let containerEl = this.titleEl.createEl('div', {cls: 'markdown-preview-view'});
-            MarkdownRenderer.render(this.plugin.app, this.title, containerEl, "", new Component());
+            const component = new Component();
+            MarkdownRenderer.render(this.plugin.app, this.title, containerEl, "", component);
         }
         if (this.isEditable && this.content instanceof TFile) {
             // adapted from https://github.com/likemuuxi/obsidian-modal-opener (MIT license)
             this.leaf = this.plugin.app.workspace.createLeafInParent(this.plugin.app.workspace.rootSplit, 0);
-            if (this.leaf) (this.leaf as any).containerEl.style.display = 'none';
+            if (this.leaf) (this.leaf as any).containerEl.hide();
             await this.leaf.openFile(this.content);
             this.contentEl.appendChild(this.leaf.view.containerEl);
         }
         else if (this.isWebviewer && typeof this.content === 'string') {
             this.leaf = this.plugin.app.workspace.createLeafInParent(this.plugin.app.workspace.rootSplit, 0);
-            if (this.leaf) (this.leaf as any).containerEl.style.display = 'none';
+            if (this.leaf) (this.leaf as any).containerEl.hide();
             await this.leaf.setViewState({type: 'webviewer', state: { url: this.content, navigate: true }, active: true});
             this.contentEl.appendChild(this.leaf.view.containerEl);
         }
@@ -74,7 +75,8 @@ export class NtbModal extends Modal {
 
         // render content as markdown
         if (typeof this.content === 'string') {
-            await MarkdownRenderer.render(this.plugin.app, this.content, containerEl, "", new Component());
+            const component = new Component();
+            await MarkdownRenderer.render(this.plugin.app, this.content, containerEl, "", component);
         } 
         else {
             try {
@@ -82,7 +84,8 @@ export class NtbModal extends Modal {
                 // only render markdown files
                 if (['md', 'markdown'].includes(ext)) {
                     const fileContent = await this.app.vault.cachedRead(this.content);
-                    await MarkdownRenderer.render(this.plugin.app, fileContent, containerEl, normalizePath(this.content.path), new Component());
+                    const component = new Component();
+                    await MarkdownRenderer.render(this.plugin.app, fileContent, containerEl, normalizePath(this.content.path), component);
 
                     // make links tabbable
                     this.modalEl.querySelectorAll('a.internal-link, a.external-link').forEach((link) => {
@@ -104,7 +107,8 @@ export class NtbModal extends Modal {
                 // attempt to embed everything else
                 else {
                     const embedMd = `![[${this.content.path}]]`;
-                    await MarkdownRenderer.render(this.plugin.app, embedMd, containerEl, "", this.plugin);
+                    const embedMdComponent = new Component();
+                    await MarkdownRenderer.render(this.plugin.app, embedMd, containerEl, "", embedMdComponent);
                 };
             }
             catch (error) {

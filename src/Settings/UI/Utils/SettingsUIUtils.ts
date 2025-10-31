@@ -94,7 +94,7 @@ export function createToolbarPreviewFr(
 							}
 						}
 						break;
-					default:
+					default: {
 						const itemIcon = item.icon ? getIcon(item.icon) : null;
 						if (itemIcon || item.label) {
 							const defaultItemFr = createDiv();
@@ -120,6 +120,7 @@ export function createToolbarPreviewFr(
 							itemsFr.append(defaultItemFr);
 						}
 						break;
+					}
 
 				}
 
@@ -407,7 +408,7 @@ export function openItemSuggestModal(
 			await plugin.settingsManager.save();
 
 			if (isEmptyItem) new ItemModal(plugin, toolbar, newItem).open()
-			else new Notice(t('setting.add-item.notice-item-added', { toolbarName: toolbar.name }));
+			else new Notice(t('setting.add-item.notice-item-added', { toolbarName: toolbar.name, interpolation: { escapeValue: false } }));
 
 			if (parent) parent.display(newItem.uuid);
 

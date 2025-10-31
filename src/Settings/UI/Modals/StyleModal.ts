@@ -19,7 +19,7 @@ export default class StyleModal extends Modal {
 	 * Displays the toolbar's Style UI within the modal window.
 	 */
 	onOpen() {
-        this.setTitle(t('setting.styles.title', { toolbar: this.toolbar.name }));
+        this.setTitle(t('setting.styles.title', { toolbar: this.toolbar.name, interpolation: { escapeValue: false } }));
 		this.display();
 	}
 
@@ -67,12 +67,13 @@ export default class StyleModal extends Modal {
         this.plugin.registerDomEvent(
             this.modalEl, 'keydown', async (e: KeyboardEvent) => {
                 switch (e.key) {
-                    case "Enter":
+                    case "Enter": {
                         const modifierPressed = (Platform.isWin || Platform.isLinux) ? e?.ctrlKey : e?.metaKey;
                         if (modifierPressed) {
                             this.close();
                         }
                         break;
+					}
                 }
             }
         );

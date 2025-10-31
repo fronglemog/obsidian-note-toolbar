@@ -1,5 +1,5 @@
 import NoteToolbarPlugin from 'main';
-import { ButtonComponent, ItemView, MarkdownRenderer, Scope, setIcon, Setting, setTooltip, WorkspaceLeaf } from 'obsidian';
+import { ButtonComponent, Component, ItemView, MarkdownRenderer, Scope, setIcon, Setting, setTooltip, WorkspaceLeaf } from 'obsidian';
 import gallery from 'Help/Gallery/gallery.json';
 import { t, ToolbarItemSettings, URL_FEEDBACK_FORM, VIEW_TYPE_GALLERY } from 'Settings/NoteToolbarSettings';
 import { getPluginNames, iconTextFr } from 'Settings/UI/Utils/SettingsUIUtils';
@@ -56,7 +56,7 @@ export class GalleryView extends ItemView {
         contentDiv.addClass('note-toolbar-setting-gallery-view');
 
 		let markdownEl = contentDiv.createDiv();
-		markdownEl.addClass('markdown-preview-view', 'note-toolbar-setting-whatsnew-content', 'is-readable-line-width');
+		markdownEl.addClass('markdown-preview-view', 'note-toolbar-setting-gallery-content', 'is-readable-line-width');
 
 		const language = (typeof i18next.language === 'string' && i18next.language.trim()) || 'en';
 
@@ -66,18 +66,21 @@ export class GalleryView extends ItemView {
 		setIcon(bannerIconEl, 'layout-grid');
 		const title = (gallery as Gallery).title[language] || gallery.title['en'];
 		const bannerTitleEl = bannerEl.createDiv();
-		MarkdownRenderer.render(this.plugin.app, `# ${title}`, bannerTitleEl, '/', this.plugin);
+		const bannerTitleComponent = new Component();
+		MarkdownRenderer.render(this.plugin.app, `# ${title}`, bannerTitleEl, '/', bannerTitleComponent);
 
 		const overviewEl = markdownEl.createDiv();
 		overviewEl.addClass('note-toolbar-gallery-view-plugin-overview');
 		const overview = (gallery as Gallery).overview[language] || gallery.overview['en'];
-		MarkdownRenderer.render(this.plugin.app, overview, overviewEl, '/', this.plugin);
+		const overviewComponent = new Component();
+		MarkdownRenderer.render(this.plugin.app, overview, overviewEl, '/', overviewComponent);
 
 		const pluginNoteEl = markdownEl.createDiv();
 		pluginNoteEl.addClass('note-toolbar-gallery-view-note');
 		setIcon(pluginNoteEl.createSpan(), 'puzzle');
 		const pluginNoteText = (gallery as Gallery).pluginNote[language] || (gallery as Gallery).pluginNote['en'];
-		MarkdownRenderer.render(this.plugin.app, pluginNoteText, pluginNoteEl, '/', this.plugin);
+		const pluginNoteComponent = new Component();
+		MarkdownRenderer.render(this.plugin.app, pluginNoteText, pluginNoteEl, '/', pluginNoteComponent);
 
 		const searchSetting = new Setting(markdownEl)
 			.setClass('note-toolbar-setting-item-full-width-phone')
@@ -105,16 +108,18 @@ export class GalleryView extends ItemView {
 		(gallery as Gallery).categories.forEach((category, i) => {
 
 			const cssColor = cssColors[i % cssColors.length];
-
+			
 			const catNameEl = markdownEl.createEl('div');
 			catNameEl.addClass('note-toolbar-gallery-view-cat-title');
 			const catName = category.name[language] || category.name['en'];
-			MarkdownRenderer.render(this.plugin.app, `## ${catName}`, catNameEl, '/', this.plugin);
+			const catComponent = new Component();
+			MarkdownRenderer.render(this.plugin.app, `## ${catName}`, catNameEl, '/', catComponent);
 
 			const catDescEl = markdownEl.createEl('div');
 			catDescEl.addClass('note-toolbar-gallery-view-cat-description');
 			const catDescText = category.description[language] || category.description['en'];
-			MarkdownRenderer.render(this.plugin.app, catDescText, catDescEl, '/', this.plugin);
+			const catDescComponent = new Component();
+			MarkdownRenderer.render(this.plugin.app, catDescText, catDescEl, '/', catDescComponent);
 
 			const galleryItemContainerEl = markdownEl.createDiv();
 			galleryItemContainerEl.addClass('note-toolbar-gallery-card-items');

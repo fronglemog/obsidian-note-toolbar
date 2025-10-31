@@ -116,7 +116,7 @@ async function exportToCalloutList(
                     itemsExport += `${BULLET} [${itemIcon}${itemText}]()<data ${scriptAttributes}/>`;
                 }
                 break;
-            case ItemType.File:
+            case ItemType.File: {
                 // check if the provided file links to a folder, and if so replace with a folder
                 let resolvedItemLink = itemLink;
                 plugin.replaceVars(itemLink, activeFile).then((resolvedLink) => {
@@ -132,12 +132,14 @@ async function exportToCalloutList(
                     itemsExport += `${BULLET} [[${itemLink}|${itemIcon}${itemText}]]`;
                 }
                 break;
-            case ItemType.Group:
+            }
+            case ItemType.Group: {
                 let groupToolbar = plugin.settingsManager.getToolbar(item.link);
                 itemsExport += groupToolbar ? await exportToCalloutList(plugin, groupToolbar, activeFile, options, recursions + 1) : '';
                 // TODO: skipped/ignored message if toolbar not found
                 break;
-            case ItemType.Menu:
+            }
+            case ItemType.Menu: {
                 let menuLink = itemLink;
                 if (!options.useIds) {
                     let menuToolbar = plugin.settingsManager.getToolbar(item.link);
@@ -148,6 +150,7 @@ async function exportToCalloutList(
                     ? `${BULLET} [${itemIcon}${itemText}]()<data data-ntb-menu="${menuLink}"/>`
                     : `${BULLET} [${itemIcon}${itemText}](<obsidian://note-toolbar?menu=${menuLink}>)`;
                 break;
+            }
             case ItemType.Separator:
                 itemsExport += `${BULLET} <hr/>`;
                 break;
@@ -169,11 +172,13 @@ async function exportToCalloutList(
  * Returns a string that shouldn't break an attribute value portion.
  */
 function escapeAttribute(str: string): string {
+    /* eslint-disable no-useless-escape */
     return str
         .replace(/\"/g, '&quot;')
         .replace(/\>/g, '&gt;')
         .replace(/\</g, '&lt;')
         .replace(/\s+/g, ' '); // replace newlines with spaces
+    /* eslint-enable no-useless-escape */
 }
 
 /**
@@ -248,7 +253,7 @@ export async function importFromCallout(
 
     const lines = callout.trim().split('\n');
     const isToolbarProvided = toolbar ? true : false;
-    var errorLog = '';
+    let errorLog = '';
 
     // get the active file to provide context
     let activeFile = plugin.app.workspace.getActiveFile();
@@ -310,7 +315,7 @@ export async function importFromCallout(
 
         plugin.debug(index + 1);
         
-        var itemType: ItemType | undefined = undefined;
+        let itemType: ItemType | undefined = undefined;
 
         let icon = '';
         let label = '';
@@ -387,7 +392,7 @@ export async function importFromCallout(
                     plugin.debug('• data?', dataUriType, link);
         
                     switch (dataUriType) {
-                        case ItemType.Command:
+                        case ItemType.Command: {
                             itemType = ItemType.Command;
                             commandId = dataUriValue;
                             const commandName = getCommandNameById(plugin, commandId);
@@ -396,10 +401,11 @@ export async function importFromCallout(
                             errorLog += commandName ? '' : `${t('import.errorlog-item', { number: index + 1 })} ${t('import.errorlog-command-not-recognized', { command: commandId })}\n`;
                             // TODO: link needs to trigger field error style somehow
                             break;
+                        }
                         case ItemType.Dataview:
                         case ItemType.JavaScript:
                         case ItemType.JsEngine:
-                        case ItemType.Templater:
+                        case ItemType.Templater: {
                             itemType = dataUriType;
                             const dataEl = line.match(/<data\s[^>]*\/?>/);
                             plugin.debug(dataUriType, dataEl);
@@ -419,17 +425,19 @@ export async function importFromCallout(
                                 } as ScriptConfig;
                             }
                             break;
+                        }
                         case ItemType.Folder:
                             itemType = ItemType.File;
                             link = dataUriValue;
                             break;
-                        case ItemType.Menu:
+                        case ItemType.Menu: {
                             itemType = ItemType.Menu;
                             let menuToolbar = plugin.settingsManager.getToolbar(dataUriValue);
                             link = menuToolbar ? menuToolbar.uuid : dataUriValue;
                             errorLog += menuToolbar ? '' : `${t('import.errorlog-item', { number: index + 1 })} ${t('import.errorlog-menu-not-found', { menu: dataUriValue })}\n`;
                             // TODO: link needs to trigger field error style somehow
                             break;
+                        }
                     }
 
                 }
