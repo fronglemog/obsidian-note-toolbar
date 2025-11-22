@@ -1,6 +1,6 @@
 import NoteToolbarPlugin from 'main';
 import { ButtonComponent, Component, ItemView, MarkdownRenderer, requestUrl, Setting, WorkspaceLeaf } from 'obsidian';
-import { URL_RELEASES, t, URL_USER_GUIDE, VIEW_TYPE_WHATS_NEW, WHATSNEW_VERSION, URL_RELEASE_NOTES } from 'Settings/NoteToolbarSettings';
+import { t, URL_RELEASE_NOTES, URL_RELEASES, URL_USER_GUIDE, VIEW_TYPE_WHATS_NEW, WHATSNEW_VERSION } from 'Settings/NoteToolbarSettings';
 import { iconTextFr } from '../Settings/UI/Utils/SettingsUIUtils';
 
 type Release = { 
@@ -8,13 +8,10 @@ type Release = {
 	body: string;
 };
 
-export class WhatsNewView extends ItemView {
+export default class WhatsNewView extends ItemView {
 
-    plugin: NoteToolbarPlugin;
-
-    constructor(plugin: NoteToolbarPlugin, leaf: WorkspaceLeaf) {
+    constructor(private ntb: NoteToolbarPlugin, leaf: WorkspaceLeaf) {
         super(leaf);
-        this.plugin = plugin;
     }
 
     getViewType(): string {
@@ -87,9 +84,9 @@ export class WhatsNewView extends ItemView {
 			markdownEl.empty();
 		}
 
-		const rootPath = this.plugin.app.vault.getRoot().path;
+		const rootPath = this.ntb.app.vault.getRoot().path;
 		const component = new Component();
-		MarkdownRenderer.render(this.plugin.app, releaseText, markdownEl, rootPath, component);
+		MarkdownRenderer.render(this.ntb.app, releaseText, markdownEl, rootPath, component);
 
     }
 

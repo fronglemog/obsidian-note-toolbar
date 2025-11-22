@@ -1,24 +1,26 @@
-import { ButtonComponent, getIcon, Notice, Platform, setIcon, Setting, setTooltip } from "obsidian";
-import { ItemType, URL_RELEASES, t, ToolbarItemSettings, ToolbarSettings, URL_USER_GUIDE, VIEW_TYPE_WHATS_NEW, WHATSNEW_VERSION, VIEW_TYPE_GALLERY, IGNORE_PLUGIN_IDS, DEFAULT_ITEM_VISIBILITY_SETTINGS, VIEW_TYPE_HELP } from "Settings/NoteToolbarSettings";
-import { SettingsManager } from "Settings/SettingsManager";
 import NoteToolbarPlugin from "main";
-import ToolbarSettingsModal from "../Modals/ToolbarSettingsModal";
-import ItemModal from "../Modals/ItemModal";
-import { ItemSuggestModal, ItemSuggestMode } from "../Modals/ItemSuggestModal";
-import { confirmWithModal } from "../Modals/ConfirmModal";
+import { ButtonComponent, getIcon, Notice, Platform, setIcon, Setting, setTooltip, TFile, TFolder } from "obsidian";
+import { COMMAND_DOES_NOT_EXIST, DEFAULT_ITEM_VISIBILITY_SETTINGS, IGNORE_PLUGIN_IDS, ItemType, ScriptConfig, SettingType, t, ToolbarItemSettings, ToolbarSettings, URL_RELEASES, URL_USER_GUIDE, VIEW_TYPE_GALLERY, VIEW_TYPE_HELP, VIEW_TYPE_WHATS_NEW, WHATSNEW_VERSION } from "Settings/NoteToolbarSettings";
+import SettingsManager from "Settings/SettingsManager";
+import { importArgs } from "Utils/Utils";
 import { PLUGIN_VERSION } from "version";
-import { ToolbarSuggestModal } from "../Modals/ToolbarSuggestModal";
+import { confirmWithModal } from "../Modals/ConfirmModal";
+import ItemModal from "../Modals/ItemModal";
+import ItemSuggestModal, { ItemSuggestMode } from "../Modals/ItemSuggestModal";
+import ToolbarSettingsModal from "../Modals/ToolbarSettingsModal";
+import ToolbarSuggestModal from "../Modals/ToolbarSuggestModal";
+import NoteToolbarSettingTab from "../NoteToolbarSettingTab";
 
 /**
  * Returns an element contianing a dismissable onboarding message.
- * @param plugin NoteToolbarPlugin
+ * @param ntb NoteToolbarPlugin
  * @param messageId unique identifier for the message, so it's not shown again
  * @param title title of the message
  * @param content content of the message
  * @returns 
  */
 export function createOnboardingMessageEl(
-	plugin: NoteToolbarPlugin,
+	ntb: NoteToolbarPlugin,
 	messageId: string,
 	title: string,
 	content: string,
@@ -34,25 +36,25 @@ export function createOnboardingMessageEl(
 				.setTooltip("Dismiss") // FIXME: localize string
 				.onClick(() => {
 					setting.settingEl.remove();
-					plugin.settings.onboarding[messageId] = true;
-					plugin.settingsManager.save();
+					ntb.settings.onboarding[messageId] = true;
+					ntb.settingsManager.save();
 				});
 			button.extraSettingsEl.addClass('note-toolbar-setting-plugin-onboarding-close');
-			handleKeyClick(plugin, button.extraSettingsEl);
+			handleKeyClick(ntb, button.extraSettingsEl);
 		});
 	return setting.settingEl;
 }
 
 /**
  * Constructs a preview of the given toolbar, including the icons used.
- * @param plugin NoteToolbarPlugin reference
+ * @param ntb NoteToolbarPlugin reference
  * @param toolbar ToolbarSettings to display in the preview.
  * @param settingsManager Optional SettingsManager if Groups need to be expanded within previews. 
  * @param showEditLink set to true to add a link to edit the toolbar, after the preview; default is false.
  * @returns DocumentFragment
  */
 export function createToolbarPreviewFr(
-	plugin: NoteToolbarPlugin, 
+	ntb: NoteToolbarPlugin, 
 	toolbar: ToolbarSettings, 
 	settingsManager?: SettingsManager, 
 	showEditLink: boolean = false
@@ -109,7 +111,7 @@ export function createToolbarPreviewFr(
 							if (item.label) {
 								const labelFr = createSpan();
 								labelFr.textContent = item.label;
-								if (item.label && plugin.hasVars(item.label)) {
+								if (item.label && ntb.vars.hasVars(item.label)) {
 									labelFr.addClass('note-toolbar-setting-item-preview-code');
 								}
 								defaultItemFr.append(labelFr);
@@ -151,32 +153,33 @@ export function createToolbarPreviewFr(
  * @param useTextVersion set to true to just use the small text version.
  * @param closeCallback function to close the settings window, which will depend on where it was launched from
  */
-export function displayHelpSection(plugin: NoteToolbarPlugin, settingsDiv: HTMLElement, useTextVersion: boolean = false, closeCallback: () => void) {
+export function displayHelpSection(ntb: NoteToolbarPlugin, settingsDiv: HTMLElement, useTextVersion: boolean = false, closeCallback: () => void) {
 	
 	if (Platform.isPhone || useTextVersion) {
 
 		let helpContainerEl = settingsDiv.createDiv();
-		helpContainerEl.addClass('note-toolbar-setting-help-section');
+		helpContainerEl.addClass('note-toolbar-setting-help-section-phone');
+
 		const helpDesc = document.createDocumentFragment();
 		helpDesc.append("v" + PLUGIN_VERSION, " • ");
 		const whatsNewLink = helpDesc.createEl("a", { href: "#", text: t('setting.button-whats-new') });
-		plugin.registerDomEvent(whatsNewLink, 'click', (event) => { 
-			plugin.app.workspace.getLeaf(true).setViewState({ type: VIEW_TYPE_WHATS_NEW, active: true });
-			if (Platform.isPhone) plugin.app.workspace.leftSplit?.collapse();
+		ntb.registerDomEvent(whatsNewLink, 'click', (event) => { 
+			ntb.app.workspace.getLeaf(true).setViewState({ type: VIEW_TYPE_WHATS_NEW, active: true });
+			if (Platform.isPhone) ntb.app.workspace.leftSplit?.collapse();
 			closeCallback();
 		});
 		helpDesc.append(' • ');
 		const galleryLink = helpDesc.createEl("a", { href: "#", text: iconTextFr('layout-grid', t('setting.button-gallery')) });
-		plugin.registerDomEvent(galleryLink, 'click', (event) => { 
-			plugin.app.workspace.getLeaf(true).setViewState({ type: VIEW_TYPE_GALLERY, active: true });
-			if (Platform.isPhone) plugin.app.workspace.leftSplit?.collapse();
+		ntb.registerDomEvent(galleryLink, 'click', (event) => { 
+			ntb.app.workspace.getLeaf(true).setViewState({ type: VIEW_TYPE_GALLERY, active: true });
+			if (Platform.isPhone) ntb.app.workspace.leftSplit?.collapse();
 			closeCallback();
 		});
 		helpDesc.append(' • ');
 		const helpLink = helpDesc.createEl("a", { href: "#", text: iconTextFr('help-circle', t('setting.button-help')) });
-		plugin.registerDomEvent(helpLink, 'click', (event) => { 
-			plugin.app.workspace.getLeaf(true).setViewState({ type: VIEW_TYPE_HELP, active: true });
-			if (Platform.isPhone) plugin.app.workspace.leftSplit?.collapse();
+		ntb.registerDomEvent(helpLink, 'click', (event) => { 
+			ntb.app.workspace.getLeaf(true).setViewState({ type: VIEW_TYPE_HELP, active: true });
+			if (Platform.isPhone) ntb.app.workspace.leftSplit?.collapse();
 			closeCallback();
 		});
 		helpContainerEl.append(helpDesc);
@@ -196,11 +199,11 @@ export function displayHelpSection(plugin: NoteToolbarPlugin, settingsDiv: HTMLE
 				button
 					.setTooltip(t('setting.button-whats-new-tooltip'))
 					.onClick(() => {
-						plugin.app.workspace.getLeaf(true).setViewState({
+						ntb.app.workspace.getLeaf(true).setViewState({
 							type: VIEW_TYPE_WHATS_NEW,
 							active: true
 						});
-						if (Platform.isPhone) plugin.app.workspace.leftSplit?.collapse();
+						if (Platform.isPhone) ntb.app.workspace.leftSplit?.collapse();
 						closeCallback();
 					})
 					.buttonEl.setText(t('setting.button-whats-new'));
@@ -209,8 +212,8 @@ export function displayHelpSection(plugin: NoteToolbarPlugin, settingsDiv: HTMLE
 				button
 					.setTooltip(t('setting.button-gallery-tooltip'))
 					.onClick(() => {
-						plugin.app.workspace.getLeaf(true).setViewState({ type: VIEW_TYPE_GALLERY, active: true });
-						if (Platform.isPhone) plugin.app.workspace.leftSplit?.collapse();
+						ntb.app.workspace.getLeaf(true).setViewState({ type: VIEW_TYPE_GALLERY, active: true });
+						if (Platform.isPhone) ntb.app.workspace.leftSplit?.collapse();
 						closeCallback();
 					})
 					.buttonEl.setText(iconTextFr('layout-grid', t('setting.button-gallery')));
@@ -219,8 +222,8 @@ export function displayHelpSection(plugin: NoteToolbarPlugin, settingsDiv: HTMLE
 				button
 					.setTooltip(t('setting.button-help-tooltip'))
 					.onClick(() => {
-						plugin.app.workspace.getLeaf(true).setViewState({ type: VIEW_TYPE_HELP, active: true });
-						if (Platform.isPhone) plugin.app.workspace.leftSplit?.collapse();
+						ntb.app.workspace.getLeaf(true).setViewState({ type: VIEW_TYPE_HELP, active: true });
+						if (Platform.isPhone) ntb.app.workspace.leftSplit?.collapse();
 						closeCallback();
 					})
 					.buttonEl.setText(iconTextFr('help-circle', t('setting.button-help')))
@@ -268,8 +271,8 @@ export function getDisclaimersFr(disclaimers: {[key: string]: string}[], keysToC
  * @param toolbarName name of the toolbar to look for.
  * @returns string 'obsidian://' URI.
  */
-export function getToolbarPropSearchUri(plugin: NoteToolbarPlugin, toolbarName: string): string {
-	let searchUri = 'obsidian://search?vault=' + plugin.app.vault.getName() + '&query=[' + plugin.settings.toolbarProp + ': ' + toolbarName + ']';
+export function getToolbarPropSearchUri(ntb: NoteToolbarPlugin, toolbarName: string): string {
+	let searchUri = 'obsidian://search?vault=' + ntb.app.vault.getName() + '&query=[' + ntb.settings.toolbarProp + ': ' + toolbarName + ']';
 	return encodeURI(searchUri);
 }
 
@@ -278,9 +281,9 @@ export function getToolbarPropSearchUri(plugin: NoteToolbarPlugin, toolbarName: 
  * @param id UUID of the toolbar to check usage for.
  * @returns mappingCount and itemCount
  */
-export function getToolbarSettingsUsage(plugin: NoteToolbarPlugin, id: string): [number, number] {
-	let mappingCount = plugin.settings.folderMappings.filter(mapping => mapping.toolbar === id).length;
-	let itemCount = plugin.settings.toolbars.reduce((count, toolbar) => {
+export function getToolbarSettingsUsage(ntb: NoteToolbarPlugin, id: string): [number, number] {
+	let mappingCount = ntb.settings.folderMappings.filter(mapping => mapping.toolbar === id).length;
+	let itemCount = ntb.settings.toolbars.reduce((count, toolbar) => {
 		return count + toolbar.items.filter(item => 
 			item.link === id && (item.linkAttr.type === ItemType.Group || item.linkAttr.type === ItemType.Menu)
 		).length;
@@ -288,28 +291,28 @@ export function getToolbarSettingsUsage(plugin: NoteToolbarPlugin, id: string): 
 	return [mappingCount, itemCount];
 }
 
-export function getToolbarUsageFr(plugin: NoteToolbarPlugin, toolbar: ToolbarSettings, parent?: ToolbarSettingsModal): DocumentFragment {
+export function getToolbarUsageFr(ntb: NoteToolbarPlugin, toolbar: ToolbarSettings, parent?: ToolbarSettingsModal): DocumentFragment {
 	let usageFr = document.createDocumentFragment();
-	let usageText = getToolbarUsageText(plugin, toolbar) || t('setting.usage.description_none');
+	let usageText = getToolbarUsageText(ntb, toolbar) || t('setting.usage.description_none');
 	usageFr.append(usageText);
 	
 	if (parent) {
 		if (usageText) usageFr.append(usageFr.createEl("br")); 
 		const descLinkFr = usageFr.createEl('a', {href: '#', text: t('setting.usage.description-search')});
 		usageFr.append(descLinkFr);
-		plugin.registerDomEvent(descLinkFr, 'click', () => {
+		ntb.registerDomEvent(descLinkFr, 'click', () => {
 			parent.close();
 			// @ts-ignore
-			plugin.app.setting.close();
-			window.open(getToolbarPropSearchUri(plugin, toolbar.name));
+			ntb.app.setting.close();
+			window.open(getToolbarPropSearchUri(ntb, toolbar.name));
 		});
 	}
 
 	return usageFr;
 }
 
-export function getToolbarUsageText(plugin: NoteToolbarPlugin, toolbar: ToolbarSettings): string {
-	const [ mappingCount, itemCount ] = getToolbarSettingsUsage(plugin, toolbar.uuid);
+export function getToolbarUsageText(ntb: NoteToolbarPlugin, toolbar: ToolbarSettings): string {
+	const [ mappingCount, itemCount ] = getToolbarSettingsUsage(ntb, toolbar.uuid);
 	let label = t('setting.usage.description');
 	let usage: String[] = [];
 	if (mappingCount > 0) usage.push(t('setting.usage.description-mappings', { count: mappingCount }));
@@ -328,9 +331,9 @@ export function getValueForKey(dict: {[key: string]: string}[], key: string): st
 	return option ? Object.values(option)[0] : '';
 }
 
-export function handleKeyClick(plugin: NoteToolbarPlugin, el: HTMLElement) {
+export function handleKeyClick(ntb: NoteToolbarPlugin, el: HTMLElement) {
 	el.tabIndex = 0;
-	plugin.registerDomEvent(
+	ntb.registerDomEvent(
 		el, 'keydown', (evt) => {
 			switch (evt.key) {
 				case 'Enter':
@@ -373,20 +376,20 @@ export function learnMoreFr(message: string, page: string, linkText: string = t(
  * Opens an item suggester that then adds the selected item to this toolbar.
  */
 export function openItemSuggestModal(
-	plugin: NoteToolbarPlugin, 
+	ntb: NoteToolbarPlugin, 
 	toolbar: ToolbarSettings, 
 	mode: ItemSuggestMode, 
 	parent?: ToolbarSettingsModal, 
 	toolbarInsertIndex?: number
 ) {
 	const modal = new ItemSuggestModal(
-		plugin, 
+		ntb, 
 		undefined, 
 		async (selectedItem: ToolbarItemSettings) => {
 			
 			const isBrowseGalleryItem = selectedItem.uuid === 'OPEN_GALLERY';
 			if (isBrowseGalleryItem) {
-				plugin.app.workspace.getLeaf(true).setViewState({ type: VIEW_TYPE_GALLERY, active: true });
+				ntb.app.workspace.getLeaf(true).setViewState({ type: VIEW_TYPE_GALLERY, active: true });
 				if (parent) parent.close();
 				return;
 			}
@@ -394,20 +397,20 @@ export function openItemSuggestModal(
 			const isEmptyItem = selectedItem.uuid === 'NEW_ITEM';
 			if (isEmptyItem) selectedItem.label = '';
 
-			let newItem = await plugin.settingsManager.duplicateToolbarItem(toolbar, selectedItem, toolbarInsertIndex);
+			let newItem = await ntb.settingsManager.duplicateToolbarItem(toolbar, selectedItem, toolbarInsertIndex);
 			// reset the visibility setting, as there's no prior indication to the user as to its visibility
 			newItem.visibility = JSON.parse(JSON.stringify(DEFAULT_ITEM_VISIBILITY_SETTINGS));
 
 			// confirm with user if they would like to enable scripting
-			const isScriptingEnabled = await openScriptPrompt(plugin, newItem);
+			const isScriptingEnabled = await openScriptPrompt(ntb, newItem);
 			if (!isScriptingEnabled) return;
 
-			if (selectedItem.inGallery && !(await plugin.settingsManager.resolveGalleryItem(newItem))) return;
+			if (selectedItem.inGallery && !(await ntb.settingsManager.resolveGalleryItem(newItem))) return;
 			
 			toolbar.updated = new Date().toISOString();
-			await plugin.settingsManager.save();
+			await ntb.settingsManager.save();
 
-			if (isEmptyItem) new ItemModal(plugin, toolbar, newItem).open()
+			if (isEmptyItem) new ItemModal(ntb, toolbar, newItem).open()
 			else new Notice(t('setting.add-item.notice-item-added', { toolbarName: toolbar.name, interpolation: { escapeValue: false } }));
 
 			if (parent) parent.display(newItem.uuid);
@@ -467,7 +470,7 @@ export function removeFieldError(el: HTMLElement | null, position: 'beforeend' |
 
 /**
  * Renders the item suggestion into the given element, for use in item suggesters and Quick Tools.
- * @param plugin NoteToolbarPlugin
+ * @param ntb NoteToolbarPlugin
  * @param item ToolbarItemSettings to render
  * @param el HEMLElement to render suggestion into
  * @param inputStr string that was used to search for this item
@@ -475,7 +478,7 @@ export function removeFieldError(el: HTMLElement | null, position: 'beforeend' |
  * @param replaceVars boolean to set true if vars should be replaced; false to leave as-is (default)
  */
 export function renderItemSuggestion(
-	plugin: NoteToolbarPlugin, 
+	ntb: NoteToolbarPlugin, 
 	item: ToolbarItemSettings, 
 	el: HTMLElement, 
 	inputStr: string, 
@@ -516,9 +519,9 @@ export function renderItemSuggestion(
 
 	let title = itemName;
 	// replace variables in labels (or tooltip, if no label set)
-	const activeFile = plugin.app.workspace.getActiveFile();
+	const activeFile = ntb.app.workspace.getActiveFile();
 	if (replaceVars) {
-		plugin.replaceVars(itemName, activeFile).then((resolvedName: string) => {
+		ntb.vars.replaceVars(itemName, activeFile).then((resolvedName: string) => {
 			itemLabelEl.setText(resolvedName);
 		});
 	}
@@ -579,7 +582,7 @@ export function renderItemSuggestion(
 
 		// show the plugin(s) supported, or the command ID used
 		if ([ItemType.Command, ItemType.Dataview, ItemType.JsEngine, ItemType.Plugin, ItemType.Templater].contains(item.linkAttr.type)) {
-			let itemPluginText = getPluginNames(plugin, item);
+			let itemPluginText = getPluginNames(ntb, item);
 			if (itemPluginText) {
 				const pluginDescEl = el.createDiv();
 				pluginDescEl.addClass('note-toolbar-item-suggester-note');	
@@ -591,17 +594,172 @@ export function renderItemSuggestion(
 }
 
 /**
+ * Updates the UI state of the given component if the value is invalid.
+ * @param ntb NoteToolbarPlugin
+ * @param parent Setting UI tab/modal that the component is in
+ * @param itemValue string value to check
+ * @param fieldType SettingFieldType to check against
+ * @param componentEl HTMLElement to update
+ * @param toolbarItem ToolbarItemSettings for the item if needed to provide more context
+ * @param [errorPosition='afterend'] where to add the error relative to the given componentEl
+ * @returns true if the item is valid; false otherwise
+ */
+export async function updateItemComponentStatus(
+	ntb: NoteToolbarPlugin,
+	parent: NoteToolbarSettingTab | ToolbarSettingsModal | ItemModal,
+	itemValue: string, 
+	fieldType: SettingType, 
+	componentEl: HTMLElement | null, 
+	toolbarItem?: ToolbarItemSettings,
+	errorPosition: 'beforeend' | 'afterend' = 'afterend'): Promise<boolean> 
+{
+
+	const enum Status {
+		Empty = 'empty',
+		Invalid = 'invalid',
+		Valid = 'valid'
+	}
+
+	let status: Status = Status.Valid;
+	let statusMessage: string = '';
+	let statusLink: HTMLAnchorElement | undefined = undefined;
+	let isValid = true;
+
+	// FIXME: this isn't happening if there's no value, (e.g., URI with no link set)
+	if (toolbarItem?.hasCommand) {
+		// check if a command was actually created for this item
+		const command = ntb.commands.getCommandFor(toolbarItem);
+		if (!command) {
+			status = Status.Invalid;
+			statusMessage = t('setting.use-item-command.error-noname');
+		}
+	}
+
+	if (itemValue) {
+		switch(fieldType) {
+			case SettingType.Args: {
+				const parsedArgs = importArgs(itemValue);
+				if (!parsedArgs) {
+					status = Status.Invalid;
+					statusMessage = t('adapter.error.args-format');
+				}
+				break;
+			}
+			case SettingType.Command:
+				if (!(itemValue in ntb.app.commands.commands)) {
+					status = Status.Invalid;
+					if (itemValue === COMMAND_DOES_NOT_EXIST) {
+						statusMessage = t('setting.item.option-command-error-does-not-exist');
+					}
+					else {
+						statusMessage = t('setting.item.option-command-error-not-available-search');
+						let pluginLinkFragment = pluginLinkFr(itemValue);
+						let pluginLink = pluginLinkFragment?.querySelector('a');
+						if (pluginLink) {
+							statusMessage = t('setting.item.option-command-error-not-available-install');
+							pluginLink.addClass('note-toolbar-setting-focussable-link');
+							statusLink = pluginLink;
+						}
+					}
+				}
+				break;
+			case SettingType.File: {
+				const file = ntb.app.vault.getAbstractFileByPath(itemValue);
+				if (!(file instanceof TFile) && !(file instanceof TFolder)) {
+					status = Status.Invalid;
+					statusMessage = t('setting.item.option-file-error-does-not-exist');
+				}
+				break;
+			}
+			case SettingType.Text:
+				// if (plugin.hasVars(itemValue)) {
+				// 	plugin.debug('VALIDATING TEXT', itemValue);
+				// 	const activeFile = plugin.app.workspace.getActiveFile();
+				// 	plugin.replaceVars(itemValue, activeFile).then((resolvedText) => {
+						
+				// 	});
+				// }
+				break;
+			case SettingType.Toolbar: {
+				let toolbar = ntb.settingsManager.getToolbarByName(itemValue);
+				if (!toolbar) {
+					toolbar = ntb.settingsManager.getToolbar(itemValue);
+					if (!toolbar) {
+						status = Status.Invalid;
+						statusMessage = t('setting.item.option-item-menu-error-does-not-exist');
+					}
+				}
+				break;
+			}
+		}
+	}
+	// empty fields and script items (which don't have values)
+	else {
+		switch (fieldType) {
+			case SettingType.Script:
+				if (toolbarItem && toolbarItem.scriptConfig) {
+					// validate what the selected function for the adapter for this item requires
+					let adapter = ntb.adapters.getAdapterForItemType(toolbarItem.linkAttr.type);
+					if (adapter) {
+						let selectedFunction = toolbarItem.scriptConfig?.pluginFunction || '';
+						const params = adapter?.getFunctions().get(selectedFunction)?.parameters;
+						if (params) {
+							for (const [index, param] of params.entries()) {
+								// TODO? error if required parameter is empty?
+								const value = toolbarItem.scriptConfig?.[param.parameter as keyof ScriptConfig] ?? null;
+								if (value) {
+									const subfieldValid = await updateItemComponentStatus(ntb, this.parent, value, param.type, componentEl);
+									status = subfieldValid ? Status.Valid : Status.Invalid;
+								}
+							}
+						}
+					}
+					else {
+						status = Status.Invalid;
+						statusMessage = (ntb.settings.scriptingEnabled)
+							? t('adapter.error.plugin-not-installed') 
+							: t('adapter.error.scripting-disabled');
+					}
+				}
+				break;
+			default:
+				// if the status isn't already invalid (e.g., for a command that doesn't exist)
+				if (status !== Status.Invalid) {
+					status = Status.Empty;
+					statusMessage = '';
+				}
+				break;
+		}
+	}
+
+	removeFieldError(componentEl, errorPosition);
+	switch (status) {
+		case Status.Empty:
+			// TODO? flag for whether empty should show as an error or not
+			isValid = false;
+			break;
+		case Status.Invalid:
+			setFieldError(ntb, parent, componentEl, errorPosition, statusMessage, statusLink);
+			isValid = false;
+			break;
+	}
+
+	return isValid;
+
+}
+
+/**
  * Prompts the user if they want to enable scripting, if the item requires it.
- * @param plugin NoteToolbarPlugin
+ * @param ntb NoteToolbarPlugin
  * @param item 
  * @returns true if the user confirmed, false if they cancelled
  */
-export async function openScriptPrompt(plugin: NoteToolbarPlugin, item: ToolbarItemSettings): Promise<boolean> {
+export async function openScriptPrompt(ntb: NoteToolbarPlugin, item: ToolbarItemSettings): Promise<boolean> {
 	const isScript = [ItemType.Dataview,  ItemType.JavaScript, ItemType.JsEngine, ItemType.Templater].contains(item.linkAttr.type);
 
-	if (isScript && !plugin.settings.scriptingEnabled) {
+	if (isScript && !ntb.settings.scriptingEnabled) {
 		const isConfirmed = await confirmWithModal(
-			plugin.app, 
+			ntb.app, 
 			{
 				title: t('setting.add-item.title-confirm-scripting'),
 				questionLabel: t('setting.add-item.label-confirm-scripting'),
@@ -611,9 +769,9 @@ export async function openScriptPrompt(plugin: NoteToolbarPlugin, item: ToolbarI
 		);
 		
 		if (isConfirmed) {
-			plugin.settings.scriptingEnabled = true;
-			plugin.updateAdapters();
-			await plugin.settingsManager.save();
+			ntb.settings.scriptingEnabled = true;
+			ntb.adapters.updateAdapters();
+			await ntb.settingsManager.save();
 		}
 
 		return isConfirmed;
@@ -627,7 +785,7 @@ export async function openScriptPrompt(plugin: NoteToolbarPlugin, item: ToolbarI
  * @param item ToolbarItemSettings to get plugin list from
  * @returns list of plugin names
  */
-export function getPluginNames(plugin: NoteToolbarPlugin, item: ToolbarItemSettings): string | undefined {
+export function getPluginNames(ntb: NoteToolbarPlugin, item: ToolbarItemSettings): string | undefined {
 	if (item.linkAttr.type === ItemType.Plugin) {
 		const itemPluginType = (Array.isArray(item.plugin) ? item.plugin : [item.plugin]);
 		// replace known commands with user-friendly strings (if supported), and create a list
@@ -636,7 +794,7 @@ export function getPluginNames(plugin: NoteToolbarPlugin, item: ToolbarItemSetti
 	}
 	else if (item.linkAttr.type === ItemType.Command) {
 		// make sure the command exists
-		const command = plugin.app.commands.commands[item.linkAttr.commandId];
+		const command = ntb.app.commands.commands[item.linkAttr.commandId];
 		const commandPluginId = item.linkAttr.commandId.split(':')[0];
         if (!command) {
 			// show plugin name if known, otherwise show command ID
@@ -656,11 +814,11 @@ export function getPluginNames(plugin: NoteToolbarPlugin, item: ToolbarItemSetti
  * @param fromToolbar toolbar to copy the item from
  * @param item item to copy
  */
-export async function copyToolbarItem(plugin: NoteToolbarPlugin, fromToolbar: ToolbarSettings, item: ToolbarItemSettings): Promise<void> {
-	const modal = new ToolbarSuggestModal(plugin, false, false, false, async (toToolbar: ToolbarSettings) => {
+export async function copyToolbarItem(ntb: NoteToolbarPlugin, fromToolbar: ToolbarSettings, item: ToolbarItemSettings): Promise<void> {
+	const modal = new ToolbarSuggestModal(ntb, false, false, false, async (toToolbar: ToolbarSettings) => {
 		if (toToolbar) {
-			await plugin.settingsManager.duplicateToolbarItem(toToolbar, item);
-			await plugin.settingsManager.save();
+			await ntb.settingsManager.duplicateToolbarItem(toToolbar, item);
+			await ntb.settingsManager.save();
 			new Notice(t('setting.item.menu-copy-item-notice', { toolbarName: toToolbar.name }));
 		}
 	});
@@ -672,12 +830,12 @@ export async function copyToolbarItem(plugin: NoteToolbarPlugin, fromToolbar: To
  * @param fromToolbar toolbar to move the item from
  * @param item item to move
  */
-export async function moveToolbarItem(plugin: NoteToolbarPlugin, fromToolbar: ToolbarSettings, item: ToolbarItemSettings): Promise<void> {
-	const modal = new ToolbarSuggestModal(plugin, false, false, false, async (toToolbar: ToolbarSettings) => {
+export async function moveToolbarItem(ntb: NoteToolbarPlugin, fromToolbar: ToolbarSettings, item: ToolbarItemSettings): Promise<void> {
+	const modal = new ToolbarSuggestModal(ntb, false, false, false, async (toToolbar: ToolbarSettings) => {
 		if (toToolbar) {
 			fromToolbar.items.remove(item);
 			toToolbar.items.push(item);
-			await plugin.settingsManager.save();
+			await ntb.settingsManager.save();
 			new Notice(t('setting.item.menu-move-item-notice', { toolbarName: toToolbar.name }));
 		}
 	});
@@ -686,6 +844,7 @@ export async function moveToolbarItem(plugin: NoteToolbarPlugin, fromToolbar: To
 
 /**
  * Updates the given element with an error border and text.
+ * @param ntb NoteToolbarPlugin
  * @param parent ToolbarSettingsModal
  * @param fieldEl HTMLElement to update
  * @param position Position to insert the error text
@@ -693,7 +852,8 @@ export async function moveToolbarItem(plugin: NoteToolbarPlugin, fromToolbar: To
  * @param errorLink Optional link to display after error text
  */
 export function setFieldError(
-	parent: ToolbarSettingsModal | ItemModal, 
+	ntb: NoteToolbarPlugin,
+	parent: NoteToolbarSettingTab | ToolbarSettingsModal | ItemModal, 
 	fieldEl: HTMLElement | null, 
 	position: 'afterend' | 'beforeend',
 	errorText?: string, 
@@ -716,13 +876,13 @@ export function setFieldError(
 				if (errorLink) {
 					// as it's not easy to listen for plugins being enabled,
 					// user will have to click a refresh link to dismiss the error
-					parent.plugin.registerDomEvent(errorLink, 'click', event => {
+					ntb.registerDomEvent(errorLink, 'click', (event) => {
 						let refreshLink = document.createDocumentFragment().createEl('a', { text: t('setting.item.option-command-error-refresh'), href: '#' } );
 						let refreshIcon = refreshLink.createSpan();
 						setIcon(refreshIcon, 'refresh-cw');
 						let oldLink = event.currentTarget as HTMLElement;
 						oldLink?.replaceWith(refreshLink);
-						parent.plugin.registerDomEvent(refreshLink, 'click', event => {
+						ntb.registerDomEvent(refreshLink, 'click', event => {
 							parent.display();
 						});
 					});
@@ -761,13 +921,13 @@ export function setFieldHelp(fieldEl: HTMLElement, helpText: DocumentFragment | 
 /**
  * Shows the What's New dialog if the user hasn't seen it yet.
  */
-export function showWhatsNewIfNeeded(plugin: NoteToolbarPlugin) {
+export function showWhatsNewIfNeeded(ntb: NoteToolbarPlugin) {
 
 	// show the What's New dialog once if the user hasn't seen it yet
-	if (plugin.settings.whatsnew_version !== WHATSNEW_VERSION) {
-		plugin.settings.whatsnew_version = WHATSNEW_VERSION;
-		plugin.settingsManager.save().then(() => {
-			plugin.app.workspace.getLeaf(true).setViewState({
+	if (ntb.settings.whatsnew_version !== WHATSNEW_VERSION) {
+		ntb.settings.whatsnew_version = WHATSNEW_VERSION;
+		ntb.settingsManager.save().then(() => {
+			ntb.app.workspace.getLeaf(true).setViewState({
 				type: VIEW_TYPE_WHATS_NEW,
 				active: true
 			});

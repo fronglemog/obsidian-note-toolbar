@@ -1,10 +1,11 @@
-import { Modal, TAbstractFile, TFile } from "obsidian";
-import { IToolbar } from "./IToolbar";
+import * as Obsidian from "obsidian";
+import { App, Modal, TAbstractFile, TFile } from "obsidian";
 import { IItem } from "./IItem";
+import { IToolbar } from "./IToolbar";
 
 /**
  * > [!note]
- * > This documentation is for version `1.25.18`.
+ * > This documentation is for version `1.26.01`.
  * 
  * The Note Toolbar API provides toolbar access, and the ability to show UI (suggesters, prompts, menus, and modals). The latter enables Dataview JS, JS Engine, or Templater scripts to ask for information, or to show helpful text.
  * 
@@ -31,14 +32,17 @@ import { IItem } from "./IItem";
  * 
  * ## `ntb` API
  * 
+ * - [[ntb.app|Note-Toolbar-API#app]]
  * - [[ntb.clipboard|Note-Toolbar-API#clipboard]]
  * - [[ntb.fileSuggester|Note-Toolbar-API#filesuggester]]
  * - [[ntb.getActiveItem|Note-Toolbar-API#getactiveitem]]
  * - [[ntb.getItem|Note-Toolbar-API#getitem]]
  * - [[ntb.getProperty|Note-Toolbar-API#getproperty]]
+ * - [[ntb.getSelection|Note-Toolbar-API#getselection]]
  * - [[ntb.getToolbars|Note-Toolbar-API#gettoolbars]]
  * - [[ntb.menu|Note-Toolbar-API#menu]]
  * - [[ntb.modal|Note-Toolbar-API#modal]]
+ * - [[ntb.o|Note-Toolbar-API#o]]
  * - [[ntb.prompt|Note-Toolbar-API#prompt]]
  * - [[ntb.setProperty|Note-Toolbar-API#setproperty]]
  * - [[ntb.suggester|Note-Toolbar-API#suggester]]
@@ -49,9 +53,19 @@ import { IItem } from "./IItem";
  * @privateRemarks
  * This is the documentation for the [Note Toolbar API](https://github.com/chrisgurney/obsidian-note-toolbar/wiki/Note-Toolbar-API) page.
  */
-export interface INoteToolbarApi<T> {
+export default interface INoteToolbarApi<T> {
 
     // testCallback: (buttonId: string, callback: Callback) => Promise<void>;
+
+    /**
+     * The Obsidian app instance. Use this instead of the global `app` when writing JavaScript.
+     * @see https://docs.obsidian.md/Reference/TypeScript+API/App
+     * 
+     * @example
+     * const currentFile = ntb.app.workspace.getActiveFile();
+     * new Notice(currentFile.name);
+     */
+    app: App;
 
     /**
      * Gets the clipboard value.
@@ -117,6 +131,13 @@ export interface INoteToolbarApi<T> {
     getProperty: (property: string) => string | undefined;
 
     /**
+     * Gets the currently selected text, or the word at the current cursor position, if nothing's selected.
+     * 
+     * @returns The selected text, or the word at the current cursor position. Otherwise returns an empty string.
+     */
+    getSelection: () => string;
+
+    /**
      * Gets all toolbars.
      * 
      * @returns All toolbars.
@@ -139,10 +160,10 @@ export interface INoteToolbarApi<T> {
      * 
      * @example
      * // shows bookmarks in a menu
-     * const b = app.internalPlugins.plugins['bookmarks'];
+     * const b = ntb.app.internalPlugins.plugins['bookmarks'];
      * if (!b?.enabled) return;
      * const i = b.instance?.getBookmarks();
-     * const b = app.internalPlugins.plugins['bookmarks'];
+     * const b = ntb.app.internalPlugins.plugins['bookmarks'];
      * const mi = i
      *   .filter(b => b.type === 'file' || b.type === 'folder')
      *   .map(b => ({
@@ -169,7 +190,7 @@ export interface INoteToolbarApi<T> {
      * @example
      * // shows a modal with the rendered contents of a file
      * const filename = "Welcome.md";
-     * const file = app.vault.getAbstractFileByPath(filename);
+     * const file = ntb.app.vault.getAbstractFileByPath(filename);
      * 
      * if (file) {
      *   await ntb.modal(file, {
@@ -183,6 +204,16 @@ export interface INoteToolbarApi<T> {
      * @see `NtbModal.js` in the [examples/Scripts folder](https://github.com/chrisgurney/obsidian-note-toolbar/tree/master/examples/Scripts).
      */
     modal: (content: string | TFile, options?: NtbModalOptions) => Promise<Modal>;
+
+    /**
+     * Reference to the Obsidian API module for accessing Obsidian classes and utilities from scripts.
+     * @see https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts
+     * 
+     * @example
+     * // get the current markdown view
+     * const view = ntb.app.workspace.getActiveViewOfType(ntb.o.MarkdownView);
+     */
+    o: typeof Obsidian;
 
     /**
      * Shows the prompt modal and waits for the user's input.

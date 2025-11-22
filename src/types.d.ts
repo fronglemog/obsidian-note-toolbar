@@ -1,4 +1,5 @@
-import { INoteToolbarApi } from "Api/INoteToolbarApi";
+import INoteToolbarApi from "Api/INoteToolbarApi";
+/* globals DataAdapter, KeymapInfo */
 
 declare global {
     
@@ -27,14 +28,8 @@ declare module "obsidian" {
         };
     }
 
-    // TODO: remove in next version; looks like it's now in official API
-    // interface Command {
-    //     checkCallback?: (checking: boolean) => boolean | void;
-    //     editorCheckCallback?: (checking: boolean, editor: Editor, ctx: MarkdownView | MarkdownFileInfo) => boolean | void;
-    // }
-
     // allows access to the path of the vault, for the {{vault_path}} var
-    interface FileSystemAdapter extends DataAdapter{
+    interface FileSystemAdapter extends DataAdapter {
         getBasePath(): string;
     }
 

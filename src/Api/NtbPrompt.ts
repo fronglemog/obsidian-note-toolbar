@@ -1,8 +1,4 @@
-import {App, ButtonComponent, Component, MarkdownRenderer, Modal,
-    Platform,
-    TextAreaComponent,
-    TextComponent,
-} from "obsidian";
+import { ButtonComponent, Component, MarkdownRenderer, Modal, Platform, TextAreaComponent, TextComponent } from "obsidian";
 import { t } from "Settings/NoteToolbarSettings";
 import { NtbPromptOptions } from "./INoteToolbarApi";
 import NoteToolbarPlugin from "main";
@@ -13,7 +9,7 @@ import NoteToolbarPlugin from "main";
  * Adapted from Templater:
  * @link https://github.com/SilentVoid13/Templater/blob/master/src/core/functions/internal_functions/system/PromptModal.ts
  */
-export class NtbPrompt extends Modal {
+export default class NtbPrompt extends Modal {
 
     private resolve: (value: string) => void;
     private reject: (reason?: Error) => void;
@@ -31,11 +27,11 @@ export class NtbPrompt extends Modal {
      * @see INoteToolbarApi.prompt
      */
     constructor(
-        private plugin: NoteToolbarPlugin,
+        private ntb: NoteToolbarPlugin,
         private options?: NtbPromptOptions
     ) {
 
-        super(plugin.app);
+        super(ntb.app);
 
         const {
             label: label_text = '',
@@ -60,7 +56,7 @@ export class NtbPrompt extends Modal {
     onOpen(): void {
         if (this.label) {
             const component = new Component();
-            MarkdownRenderer.render(this.plugin.app, this.label, this.titleEl, "", component);
+            MarkdownRenderer.render(this.ntb.app, this.label, this.titleEl, "", component);
         }
         this.createForm();
     }
@@ -83,7 +79,7 @@ export class NtbPrompt extends Modal {
             const submitButton = new ButtonComponent(buttonDiv);
             submitButton.buttonEl.addClass("mod-cta");
             submitButton.setButtonText(t('api.ui.button-submit'));
-            this.plugin.registerDomEvent(submitButton.buttonEl, 'click', (e: Event) =>
+            this.ntb.registerDomEvent(submitButton.buttonEl, 'click', (e: Event) =>
                 this.resolveAndClose(e)
             );
         } else {
@@ -96,7 +92,7 @@ export class NtbPrompt extends Modal {
         textInput.setValue(this.value);
         textInput.onChange((value) => (this.value = value));
         textInput.inputEl.focus();
-        this.plugin.registerDomEvent(textInput.inputEl, 'keydown', (evt: KeyboardEvent) =>
+        this.ntb.registerDomEvent(textInput.inputEl, 'keydown', (evt: KeyboardEvent) =>
             this.enterCallback(evt)
         );
     }

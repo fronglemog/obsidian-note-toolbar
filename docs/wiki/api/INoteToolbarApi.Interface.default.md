@@ -1,7 +1,7 @@
-[obsidian-note-toolbar](index.md) / [INoteToolbarApi](INoteToolbarApi.md) / INoteToolbarApi
+[obsidian-note-toolbar](index.md) / [INoteToolbarApi](INoteToolbarApi.md) / default
 
 > [!note]
-> This documentation is for version `1.25.18`.
+> This documentation is for version `1.26.01`.
 
 The Note Toolbar API provides toolbar access, and the ability to show UI (suggesters, prompts, menus, and modals). The latter enables Dataview JS, JS Engine, or Templater scripts to ask for information, or to show helpful text.
 
@@ -28,14 +28,17 @@ const itemEl = activeDocument.getElementById('112c7ed3-d5c2-4750-b95d-75bc84e235
 
 ## `ntb` API
 
+- [[ntb.app|Note-Toolbar-API#app]]
 - [[ntb.clipboard|Note-Toolbar-API#clipboard]]
 - [[ntb.fileSuggester|Note-Toolbar-API#filesuggester]]
 - [[ntb.getActiveItem|Note-Toolbar-API#getactiveitem]]
 - [[ntb.getItem|Note-Toolbar-API#getitem]]
 - [[ntb.getProperty|Note-Toolbar-API#getproperty]]
+- [[ntb.getSelection|Note-Toolbar-API#getselection]]
 - [[ntb.getToolbars|Note-Toolbar-API#gettoolbars]]
 - [[ntb.menu|Note-Toolbar-API#menu]]
 - [[ntb.modal|Note-Toolbar-API#modal]]
+- [[ntb.o|Note-Toolbar-API#o]]
 - [[ntb.prompt|Note-Toolbar-API#prompt]]
 - [[ntb.setProperty|Note-Toolbar-API#setproperty]]
 - [[ntb.suggester|Note-Toolbar-API#suggester]]
@@ -51,15 +54,34 @@ const itemEl = activeDocument.getElementById('112c7ed3-d5c2-4750-b95d-75bc84e235
 
 ## Properties
 
+### app
+
+> **app**: `App`
+
+The Obsidian app instance. Use this instead of the global `app` when writing JavaScript.
+
+#### See
+
+https://docs.obsidian.md/Reference/TypeScript+API/App
+
+#### Example
+
+```ts
+const currentFile = ntb.app.workspace.getActiveFile();
+new Notice(currentFile.name);
+```
+
+***
+
 ### clipboard()
 
-> **clipboard**: () => `Promise`\<`null` \| `string`\>
+> **clipboard**: () => `Promise`\<`string` \| `null`\>
 
 Gets the clipboard value.
 
 #### Returns
 
-`Promise`\<`null` \| `string`\>
+`Promise`\<`string` \| `null`\>
 
 The clipboard value or `null`.
 
@@ -76,7 +98,7 @@ new Notice(value);
 
 ### fileSuggester()
 
-> **fileSuggester**: (`options`?) => `Promise`\<`null` \| `TAbstractFile`\>
+> **fileSuggester**: (`options?`) => `Promise`\<`TAbstractFile` \| `null`\>
 
 Shows a file suggester modal and waits for the user's selection.
 
@@ -84,20 +106,20 @@ Shows a file suggester modal and waits for the user's selection.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `options`? | \{ `allowCustomInput`: `boolean`; `class`: `string`; `default`: `string`; `filesonly`: `boolean`; `foldersonly`: `boolean`; `label`: `string`; `limit`: `number`; `placeholder`: `string`; `rendermd`: `boolean`; \} | Optional display options. |
-| `options.allowCustomInput`? | `boolean` | If set to `true`, the user can input a custom value that is not in the list of suggestions. Default is `false`. |
-| `options.class`? | `string` | Optional CSS class(es) to add to the component. |
-| `options.default`? | `string` | Optionally pre-set the suggester's input with this value. Matching results will be shown, as if you typed in that string yourself (assuming the string appears in the list of options provided). If not provided, no default is set. |
-| `options.filesonly`? | `boolean` | If set to true, only files are shown. If not provided, defaults to `false`. |
-| `options.foldersonly`? | `boolean` | If set to true, only folders are shown. If not provided, defaults to `false`. |
-| `options.label`? | `string` | Optional text shown above the input field, with markdown formatting supported. Default is no label. |
-| `options.limit`? | `number` | Optional limit of the number of items rendered at once (useful to improve performance when displaying large lists). |
-| `options.placeholder`? | `string` | Optional placeholder text for input field; defaults to preset message. |
-| `options.rendermd`? | `boolean` | Set to `false` to disable rendering of suggestions as markdown. Default is `true`. |
+| `options?` | \{ `allowCustomInput?`: `boolean`; `class?`: `string`; `default?`: `string`; `filesonly?`: `boolean`; `foldersonly?`: `boolean`; `label?`: `string`; `limit?`: `number`; `placeholder?`: `string`; `rendermd?`: `boolean`; \} | Optional display options. |
+| `options.allowCustomInput?` | `boolean` | If set to `true`, the user can input a custom value that is not in the list of suggestions. Default is `false`. |
+| `options.class?` | `string` | Optional CSS class(es) to add to the component. |
+| `options.default?` | `string` | Optionally pre-set the suggester's input with this value. Matching results will be shown, as if you typed in that string yourself (assuming the string appears in the list of options provided). If not provided, no default is set. |
+| `options.filesonly?` | `boolean` | If set to true, only files are shown. If not provided, defaults to `false`. |
+| `options.foldersonly?` | `boolean` | If set to true, only folders are shown. If not provided, defaults to `false`. |
+| `options.label?` | `string` | Optional text shown above the input field, with markdown formatting supported. Default is no label. |
+| `options.limit?` | `number` | Optional limit of the number of items rendered at once (useful to improve performance when displaying large lists). |
+| `options.placeholder?` | `string` | Optional placeholder text for input field; defaults to preset message. |
+| `options.rendermd?` | `boolean` | Set to `false` to disable rendering of suggestions as markdown. Default is `true`. |
 
 #### Returns
 
-`Promise`\<`null` \| `TAbstractFile`\>
+`Promise`\<`TAbstractFile` \| `null`\>
 
 The selected `TAbstractFile`.
 
@@ -117,13 +139,13 @@ new Notice(folder.name);
 
 ### getActiveItem()
 
-> **getActiveItem**: () => `undefined` \| [`IItem`](IItem.Interface.IItem.md)
+> **getActiveItem**: () => [`IItem`](IItem.Interface.IItem.md) \| `undefined`
 
 Gets the active (last activated) toolbar item.
 
 #### Returns
 
-`undefined` \| [`IItem`](IItem.Interface.IItem.md)
+[`IItem`](IItem.Interface.IItem.md) \| `undefined`
 
 The active (last activated) item.
 
@@ -135,7 +157,7 @@ This does not work with Note Toolbar Callouts.
 
 ### getItem()
 
-> **getItem**: (`id`) => `undefined` \| [`IItem`](IItem.Interface.IItem.md)
+> **getItem**: (`id`) => [`IItem`](IItem.Interface.IItem.md) \| `undefined`
 
 Gets an item by its ID, if it exists.
 
@@ -147,7 +169,7 @@ Gets an item by its ID, if it exists.
 
 #### Returns
 
-`undefined` \| [`IItem`](IItem.Interface.IItem.md)
+[`IItem`](IItem.Interface.IItem.md) \| `undefined`
 
 The item, or undefined.
 
@@ -162,7 +184,7 @@ const item = ntb.getItem('112c7ed3-d5c2-4750-b95d-75bc84e23513');
 
 ### getProperty()
 
-> **getProperty**: (`property`) => `undefined` \| `string`
+> **getProperty**: (`property`) => `string` \| `undefined`
 
 Gets the value of the given property in the active note.
 
@@ -174,7 +196,7 @@ Gets the value of the given property in the active note.
 
 #### Returns
 
-`undefined` \| `string`
+`string` \| `undefined`
 
 The frontmatter value for the given property, or `undefined` if it does not exist.
 
@@ -183,6 +205,20 @@ The frontmatter value for the given property, or `undefined` if it does not exis
 ```ts
 const createdDate = ntb.getProperty('created');
 ```
+
+***
+
+### getSelection()
+
+> **getSelection**: () => `string`
+
+Gets the currently selected text, or the word at the current cursor position, if nothing's selected.
+
+#### Returns
+
+`string`
+
+The selected text, or the word at the current cursor position. Otherwise returns an empty string.
 
 ***
 
@@ -202,7 +238,7 @@ All toolbars.
 
 ### menu()
 
-> **menu**: (`items`, `options`?) => `Promise`\<`void`\>
+> **menu**: (`items`, `options?`) => `Promise`\<`void`\>
 
 Shows a menu with the provided items.
 
@@ -211,9 +247,9 @@ Shows a menu with the provided items.
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `items` | [`NtbMenuItem`](INoteToolbarApi.Interface.NtbMenuItem.md)[] | Array of items to display. See [NtbMenuItem](INoteToolbarApi.Interface.NtbMenuItem.md). |
-| `options`? | \{ `class`: `string`; `focusInMenu`: `boolean`; \} | Optional display options. |
-| `options.class`? | `string` | Optional CSS class(es) to add to the component. |
-| `options.focusInMenu`? | `boolean` | If `true`, the menu item will be focused when the menu opens; defaults to `false`. |
+| `options?` | \{ `class?`: `string`; `focusInMenu?`: `boolean`; \} | Optional display options. |
+| `options.class?` | `string` | Optional CSS class(es) to add to the component. |
+| `options.focusInMenu?` | `boolean` | If `true`, the menu item will be focused when the menu opens; defaults to `false`. |
 
 #### Returns
 
@@ -233,10 +269,10 @@ await ntb.menu([
 
 ```ts
 // shows bookmarks in a menu
-const b = app.internalPlugins.plugins['bookmarks'];
+const b = ntb.app.internalPlugins.plugins['bookmarks'];
 if (!b?.enabled) return;
 const i = b.instance?.getBookmarks();
-const b = app.internalPlugins.plugins['bookmarks'];
+const b = ntb.app.internalPlugins.plugins['bookmarks'];
 const mi = i
   .filter(b => b.type === 'file' || b.type === 'folder')
   .map(b => ({
@@ -252,7 +288,7 @@ ntb.menu(mi);
 
 ### modal()
 
-> **modal**: (`content`, `options`?) => `Promise`\<`Modal`\>
+> **modal**: (`content`, `options?`) => `Promise`\<`Modal`\>
 
 Shows a modal with the provided content.
 
@@ -261,10 +297,10 @@ Shows a modal with the provided content.
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `content` | `string` \| `TFile` | Content to display in the modal, either as a string or a file within the vault. |
-| `options`? | \{ `class`: `string`; `title`: `string`; `webpage`: `boolean`; \} | Optional display options. |
-| `options.class`? | `string` | Optional CSS class(es) to add to the component. |
-| `options.title`? | `string` | Optional title for the modal, with markdown formatting supported. |
-| `options.webpage`? | `boolean` | If `true`, the modal will show the web page URL in `content` using the Web Viewer core plugin (if enabled); defaults to `false`. |
+| `options?` | \{ `class?`: `string`; `title?`: `string`; `webpage?`: `boolean`; \} | Optional display options. |
+| `options.class?` | `string` | Optional CSS class(es) to add to the component. |
+| `options.title?` | `string` | Optional title for the modal, with markdown formatting supported. |
+| `options.webpage?` | `boolean` | If `true`, the modal will show the web page URL in `content` using the Web Viewer core plugin (if enabled); defaults to `false`. |
 
 #### Returns
 
@@ -282,7 +318,7 @@ await ntb.modal("_Hello_ world!");
 ```ts
 // shows a modal with the rendered contents of a file
 const filename = "Welcome.md";
-const file = app.vault.getAbstractFileByPath(filename);
+const file = ntb.app.vault.getAbstractFileByPath(filename);
 
 if (file) {
   await ntb.modal(file, {
@@ -300,9 +336,28 @@ else {
 
 ***
 
+### o
+
+> **o**: `__module`
+
+Reference to the Obsidian API module for accessing Obsidian classes and utilities from scripts.
+
+#### See
+
+https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts
+
+#### Example
+
+```ts
+// get the current markdown view
+const view = ntb.app.workspace.getActiveViewOfType(ntb.o.MarkdownView);
+```
+
+***
+
 ### prompt()
 
-> **prompt**: (`options`?) => `Promise`\<`null` \| `string`\>
+> **prompt**: (`options?`) => `Promise`\<`string` \| `null`\>
 
 Shows the prompt modal and waits for the user's input.
 
@@ -310,16 +365,16 @@ Shows the prompt modal and waits for the user's input.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `options`? | \{ `class`: `string`; `default`: `string`; `label`: `string`; `large`: `boolean`; `placeholder`: `string`; \} | Optional display options. |
-| `options.class`? | `string` | Optional CSS class(es) to add to the component. |
-| `options.default`? | `string` | Optional default value for text field. If not provided, no default value is set. |
-| `options.label`? | `string` | Optional text shown above the text field, with markdown formatting supported. Default is no label. |
-| `options.large`? | `boolean` | If set to `true`, the input field will be multi line. If not provided, defaults to `false`. |
-| `options.placeholder`? | `string` | Optional text inside text field. Defaults to a preset message. |
+| `options?` | \{ `class?`: `string`; `default?`: `string`; `label?`: `string`; `large?`: `boolean`; `placeholder?`: `string`; \} | Optional display options. |
+| `options.class?` | `string` | Optional CSS class(es) to add to the component. |
+| `options.default?` | `string` | Optional default value for text field. If not provided, no default value is set. |
+| `options.label?` | `string` | Optional text shown above the text field, with markdown formatting supported. Default is no label. |
+| `options.large?` | `boolean` | If set to `true`, the input field will be multi line. If not provided, defaults to `false`. |
+| `options.placeholder?` | `string` | Optional text inside text field. Defaults to a preset message. |
 
 #### Returns
 
-`Promise`\<`null` \| `string`\>
+`Promise`\<`string` \| `null`\>
 
 The user's input.
 
@@ -381,7 +436,7 @@ await ntb.setProperty('A List', ['asdf', 'asdf2']);
 
 ### suggester()
 
-> **suggester**: (`values`, `keys`?, `options`?) => `Promise`\<`null` \| `T`\>
+> **suggester**: (`values`, `keys?`, `options?`) => `Promise`\<`T` \| `null`\>
 
 Shows a suggester modal and waits for the user's selection.
 
@@ -390,19 +445,19 @@ Shows a suggester modal and waits for the user's selection.
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `values` | `string`[] \| (`value`) => `string` | Array of strings representing the text that will be displayed for each item in the suggester prompt. This can also be a function that maps an item to its text representation. Markdown formatting is supported: optionally mix in Obsidian and plugin markdown (e.g., Iconize) to have it rendered |
-| `keys`? | `T`[] | Optional array containing the keys of each item in the correct order. If not provided or `null`, values are returned on selection. |
-| `options`? | \{ `allowCustomInput`: `boolean`; `class`: `string`; `default`: `string`; `label`: `string`; `limit`: `number`; `placeholder`: `string`; `rendermd`: `boolean`; \} | Optional display options. |
-| `options.allowCustomInput`? | `boolean` | If set to `true`, the user can input a custom value that is not in the list of suggestions. Default is `false`. |
-| `options.class`? | `string` | Optional CSS class(es) to add to the component. |
-| `options.default`? | `string` | Optionally pre-set the suggester's input with this value. Matching results will be shown, as if you typed in that string yourself (assuming the string appears in the list of options provided). If not provided, no default is set. |
-| `options.label`? | `string` | Optional text shown above the input field, with markdown formatting supported. Default is no label. |
-| `options.limit`? | `number` | Optional limit of the number of items rendered at once (useful to improve performance when displaying large lists). |
-| `options.placeholder`? | `string` | Optional placeholder text for input field; defaults to preset message. |
-| `options.rendermd`? | `boolean` | Set to `false` to disable rendering of suggestions as markdown. Default is `true`. |
+| `keys?` | `T`[] | Optional array containing the keys of each item in the correct order. If not provided or `null`, values are returned on selection. |
+| `options?` | \{ `allowCustomInput?`: `boolean`; `class?`: `string`; `default?`: `string`; `label?`: `string`; `limit?`: `number`; `placeholder?`: `string`; `rendermd?`: `boolean`; \} | Optional display options. |
+| `options.allowCustomInput?` | `boolean` | If set to `true`, the user can input a custom value that is not in the list of suggestions. Default is `false`. |
+| `options.class?` | `string` | Optional CSS class(es) to add to the component. |
+| `options.default?` | `string` | Optionally pre-set the suggester's input with this value. Matching results will be shown, as if you typed in that string yourself (assuming the string appears in the list of options provided). If not provided, no default is set. |
+| `options.label?` | `string` | Optional text shown above the input field, with markdown formatting supported. Default is no label. |
+| `options.limit?` | `number` | Optional limit of the number of items rendered at once (useful to improve performance when displaying large lists). |
+| `options.placeholder?` | `string` | Optional placeholder text for input field; defaults to preset message. |
+| `options.rendermd?` | `boolean` | Set to `false` to disable rendering of suggestions as markdown. Default is `true`. |
 
 #### Returns
 
-`Promise`\<`null` \| `T`\>
+`Promise`\<`T` \| `null`\>
 
 The selected value, or corresponding key if keys are provided.
 

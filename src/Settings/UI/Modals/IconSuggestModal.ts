@@ -2,18 +2,16 @@ import { IconName, SuggestModal, getIconIds, setIcon } from "obsidian";
 import NoteToolbarPlugin from "main";
 import { NoteToolbarSettings, t, ToolbarItemSettings } from "Settings/NoteToolbarSettings";
 
-export class IconSuggestModal extends SuggestModal<IconName> {
+export default class IconSuggestModal extends SuggestModal<IconName> {
 
 	constructor(
-        private plugin: NoteToolbarPlugin, 
+        private ntb: NoteToolbarPlugin, 
         private selectedIcon: string | undefined,
         private showNoIconOption: boolean, 
         private callback: (icon: string) => void
     ) {
-        super(plugin.app);
+        super(ntb.app);
         this.modalEl.addClass("note-toolbar-setting-mini-dialog");
-        this.plugin = plugin;
-        this.callback = callback;
         this.setPlaceholder(t('setting.icon-suggester.placeholder'));
         this.setInstructions([
             {command: '↑↓', purpose: t('setting.icon-suggester.instruction-navigate')},

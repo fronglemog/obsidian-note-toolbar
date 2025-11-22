@@ -2,19 +2,17 @@ import { AbstractInputSuggest, App } from "obsidian";
 import { ToolbarSettings } from "Settings/NoteToolbarSettings";
 import NoteToolbarPlugin from "main";
 
-export class ToolbarSuggester extends AbstractInputSuggest<ToolbarSettings> {
+export default class ToolbarSuggester extends AbstractInputSuggest<ToolbarSettings> {
 
-    private plugin: NoteToolbarPlugin;
-    private inputEl: HTMLInputElement;
-
-    constructor(app: App, plugin: NoteToolbarPlugin, inputEl: HTMLInputElement) {
-        super(app, inputEl);
-        this.plugin = plugin;
-        this.inputEl = inputEl;
+    constructor(
+        private ntb: NoteToolbarPlugin, 
+        private inputEl: HTMLInputElement
+    ) {
+        super(ntb.app, inputEl);
     }
 
     getSuggestions(inputStr: string): ToolbarSettings[] {
-        const pluginToolbars = this.plugin.settings.toolbars;
+        const pluginToolbars = this.ntb.settings.toolbars;
         const toolbarSuggestions: ToolbarSettings[] = [];
         const lowerCaseInputStr = inputStr.toLowerCase();
 

@@ -3,28 +3,26 @@ import { SuggestModal, TFile } from "obsidian";
 import { EMPTY_TOOLBAR, EMPTY_TOOLBAR_ID, LocalVar, t, ToolbarSettings } from "Settings/NoteToolbarSettings";
 import { createOnboardingMessageEl, createToolbarPreviewFr } from "../Utils/SettingsUIUtils";
 
-export class ToolbarSuggestModal extends SuggestModal<ToolbarSettings> {
-
-    public plugin: NoteToolbarPlugin;
+export default class ToolbarSuggestModal extends SuggestModal<ToolbarSettings> {
 
     /**
      * Creates a new modal.
-     * @param plugin NoteToolbarPlugin
+     * @param ntb NoteToolbarPlugin
      * @param showPreviews true if toolbar previews should be shown
      * @param showSwapUi true if UI for swap toolbars should be shown (e.g., default toolbar option)
      * @param showNewOption true if UI should show a "New toolbar" option (for adding items from the Gallery)
      * @param callback function to call when a toolbar is selected
      */
 	constructor(
-        plugin: NoteToolbarPlugin,
+        private ntb: NoteToolbarPlugin,
         private showPreviews: boolean, 
         private showSwapUi: boolean,
         private showNewOption: boolean,
         private callback: (toolbar: ToolbarSettings) => void) {
 
-        super(plugin.app);
+        super(ntb.app);
         this.modalEl.addClass("note-toolbar-setting-item-suggester-dialog");
-        this.plugin = plugin;
+        this.ntb = ntb;
 
         this.setPlaceholder(
             showNewOption 
@@ -39,13 +37,13 @@ export class ToolbarSuggestModal extends SuggestModal<ToolbarSettings> {
         if (this.showSwapUi) {
             // show warning message about properties being changed
             const onboardingId = 'swap-toolbars-prop';
-            if (!this.plugin.settings.onboarding[onboardingId]) {
+            if (!this.ntb.settings.onboarding[onboardingId]) {
                 let resultsEl = this.modalEl.querySelector('.prompt-results');
                 if (resultsEl) {
-                    let messageEl = createOnboardingMessageEl(this.plugin, 
+                    let messageEl = createOnboardingMessageEl(this.ntb, 
                         onboardingId, 
                         t('onboarding.swap-toolbar-title'), 
-                        t('onboarding.swap-toolbar-content', { property: this.plugin.settings.toolbarProp }));
+                        t('onboarding.swap-toolbar-content', { property: this.ntb.settings.toolbarProp }));
                     resultsEl.insertAdjacentElement('beforebegin', messageEl);
                 }    
             }
@@ -59,7 +57,7 @@ export class ToolbarSuggestModal extends SuggestModal<ToolbarSettings> {
      * @returns array of ToolbarSettings
      */
     getSuggestions(inputStr: string): ToolbarSettings[] {
-        const pluginToolbars = this.plugin.settings.toolbars;
+        const pluginToolbars = this.ntb.settings.toolbars;
         const tbarSuggestions: ToolbarSettings[] = [];
         const sortedSuggestions: ToolbarSettings[] = [];
         const lowerCaseInputStr = inputStr.toLowerCase();
@@ -82,7 +80,7 @@ export class ToolbarSuggestModal extends SuggestModal<ToolbarSettings> {
         });
 
         // sort the search results
-        const recentToolbars = JSON.parse(this.plugin.app.loadLocalStorage(LocalVar.RecentToolbars) || '[]');
+        const recentToolbars = JSON.parse(this.ntb.app.loadLocalStorage(LocalVar.RecentToolbars) || '[]');
         sortedSuggestions.sort((a, b) => {
             const query = lowerCaseInputStr;
             const aName = a.name.toLowerCase();
@@ -122,12 +120,15 @@ export class ToolbarSuggestModal extends SuggestModal<ToolbarSettings> {
     renderSuggestion(toolbar: ToolbarSettings, el: HTMLElement): void {
         let toolbarNameEl = el.createSpan();
         toolbarNameEl.setText(toolbar.name);
+        if (toolbar.uuid === EMPTY_TOOLBAR_ID) {
+            el.addClass('cm-em');
+        }
         if (this.showPreviews && toolbar.uuid !== EMPTY_TOOLBAR_ID) {
             let previewContainerEl = el.createDiv();
             previewContainerEl.addClass('setting-item-description');
             let previewEl = previewContainerEl.createDiv();
             previewEl.addClass('note-toolbar-setting-toolbar-list-preview-item');
-            let previewFr = createToolbarPreviewFr(this.plugin, toolbar, undefined);
+            let previewFr = createToolbarPreviewFr(this.ntb, toolbar, undefined);
             previewEl.append(previewFr);
             el.append(previewContainerEl);
         }
@@ -138,7 +139,7 @@ export class ToolbarSuggestModal extends SuggestModal<ToolbarSettings> {
      * @param toolbar ToolbarSettings to use.
      */
     async onChooseSuggestion(toolbar: ToolbarSettings, event: MouseEvent | KeyboardEvent) {
-        await this.plugin.settingsManager.updateRecentList(LocalVar.RecentToolbars, toolbar.name);
+        await this.ntb.settingsManager.updateRecentList(LocalVar.RecentToolbars, toolbar.name);
         this.callback(toolbar);
         this.close();
     }

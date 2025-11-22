@@ -2,7 +2,7 @@ import NoteToolbarPlugin from "main";
 import { Component, MarkdownRenderer } from "obsidian";
 import { ErrorBehavior, ScriptConfig, SettingType, t } from "Settings/NoteToolbarSettings";
 import { AdapterFunction } from "Types/interfaces";
-import { displayScriptError, importArgs } from "Utils/Utils";
+import { importArgs } from "Utils/Utils";
 import { Adapter } from "./Adapter";
 
 /**
@@ -45,9 +45,9 @@ export default class JavaScriptAdapter extends Adapter {
 
         let containerEl;
         if (config.outputContainer) {
-            containerEl = this.noteToolbar?.getOutputEl(config.outputContainer);
+            containerEl = this.ntb?.el.getOutputEl(config.outputContainer);
             if (!containerEl) {
-                displayScriptError(t('adapter.error.callout-not-found', { id: config.outputContainer }));
+                this.displayScriptError(t('adapter.error.callout-not-found', { id: config.outputContainer }));
                 return;
             }
         }
@@ -105,15 +105,15 @@ export default class JavaScriptAdapter extends Adapter {
             return;
         }
         
-        const activeFilePath = this.noteToolbar?.app.workspace.getActiveFile()?.path || '';
+        const activeFilePath = this.ntb?.app.workspace.getActiveFile()?.path || '';
 
-        let viewFile = this.noteToolbar?.app.metadataCache.getFirstLinkpathDest(filename, activeFilePath);
+        let viewFile = this.ntb?.app.metadataCache.getFirstLinkpathDest(filename, activeFilePath);
         if (!viewFile) {
-            displayScriptError(t('adapter.error.file-not-found', { filename: filename }));
+            this.displayScriptError(t('adapter.error.file-not-found', { filename: filename }));
             return;
         }
 
-        let contents = await this.noteToolbar?.app.vault.read(viewFile);
+        let contents = await this.ntb?.app.vault.read(viewFile);
 
         if (contents) {
             await this.evaluate(contents, argsJson, containerEl, ErrorBehavior.Report);
@@ -144,11 +144,11 @@ export default class JavaScriptAdapter extends Adapter {
             args = argsJson ? importArgs(argsJson) : {};
         }
         catch (error) {
-            displayScriptError(t('adapter.error.args-parsing'));
+            this.displayScriptError(t('adapter.error.args-parsing'));
             return t('adapter.error.args-parsing-error', { error: error });
         }
 
-        const activeFile = this.noteToolbar?.app.workspace.getActiveFile();
+        const activeFile = this.ntb?.app.workspace.getActiveFile();
         const activeFilePath = activeFile?.path || '';
 
         if (expression) {
@@ -160,12 +160,12 @@ export default class JavaScriptAdapter extends Adapter {
             component.load();
             try {
                 resultEl.empty();
-                this.noteToolbar?.debug(expression);
+                this.ntb?.debug(expression);
                 // may directly render, in which case it will likely return undefined or null
                 result = await Promise.resolve(func(args));
-                if (containerEl && result && this.noteToolbar) {
+                if (containerEl && result && this.ntb) {
                     MarkdownRenderer.render(
-                        this.noteToolbar.app,
+                        this.ntb.app,
                         result,
                         resultEl,
                         activeFilePath,
@@ -176,7 +176,7 @@ export default class JavaScriptAdapter extends Adapter {
             catch (error) {
                 switch (errorBehavior) {
                     case ErrorBehavior.Display:
-                        displayScriptError(t('adapter.error.expr-failed', { expression: expression }), error, containerEl);
+                        this.displayScriptError(t('adapter.error.expr-failed', { expression: expression }), error, containerEl);
                         result = t('adapter.error.general', { error: error });
                         break;
                     case ErrorBehavior.Report:

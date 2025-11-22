@@ -1,10 +1,9 @@
 import NoteToolbarPlugin from "main";
-import { Component, MarkdownRenderer, Notice } from "obsidian";
+import { Component, MarkdownRenderer } from "obsidian";
 import { ErrorBehavior, ItemType, ScriptConfig, SettingType, t } from "Settings/NoteToolbarSettings";
 import { AdapterFunction } from "Types/interfaces";
-import { displayScriptError, importArgs } from "Utils/Utils";
+import { importArgs } from "Utils/Utils";
 import { Adapter } from "./Adapter";
-import { learnMoreFr } from "Settings/UI/Utils/SettingsUIUtils";
 
 /**
  * @link https://github.com/blacksmithgu/obsidian-dataview/blob/master/src/api/plugin-api.ts
@@ -65,9 +64,9 @@ export default class DataviewAdapter extends Adapter {
 
         let containerEl;
         if (config.outputContainer) {
-            containerEl = this.noteToolbar?.getOutputEl(config.outputContainer);
+            containerEl = this.ntb?.el.getOutputEl(config.outputContainer);
             if (!containerEl) {
-                displayScriptError(t('adapter.error.callout-not-found', { id: config.outputContainer }));
+                this.displayScriptError(t('adapter.error.callout-not-found', { id: config.outputContainer }));
                 return;
             }
         }
@@ -138,7 +137,7 @@ export default class DataviewAdapter extends Adapter {
 
         let result = '';
         
-        const activeFile = this.noteToolbar?.app.workspace.getActiveFile();
+        const activeFile = this.ntb?.app.workspace.getActiveFile();
         const activeFilePath = activeFile?.path;
 
         const component = new Component();
@@ -166,7 +165,7 @@ export default class DataviewAdapter extends Adapter {
         catch (error) {
             switch (errorBehavior) {
                 case ErrorBehavior.Display:
-                    displayScriptError(t('adapter.error.expr-failed', { expression: expression }), error, containerEl);
+                    this.displayScriptError(t('adapter.error.expr-failed', { expression: expression }), error, containerEl);
                     result = t('adapter.error.general', { error: error });
                     break;
                 case ErrorBehavior.Report:
@@ -204,24 +203,24 @@ export default class DataviewAdapter extends Adapter {
             args = argsJson ? importArgs(argsJson) : {};
         }
         catch (error) {
-            displayScriptError(t('adapter.error.args-parsing', { filename: filename }), error, containerEl);
+            this.displayScriptError(t('adapter.error.args-parsing', { filename: filename }), error, containerEl);
             return;
         }
         
         // TODO: this works if the script doesn't need a container... but where does this span go?
         containerEl = containerEl || createSpan();
 
-        const activeFile = this.noteToolbar?.app.workspace.getActiveFile();
+        const activeFile = this.ntb?.app.workspace.getActiveFile();
         const activeFilePath = activeFile?.path || '';
 
-        let viewFile = this.noteToolbar?.app.metadataCache.getFirstLinkpathDest(filename, activeFilePath);
+        let viewFile = this.ntb?.app.metadataCache.getFirstLinkpathDest(filename, activeFilePath);
         if (!viewFile) {
             // TODO: render messages into the container, if provided
-            displayScriptError(t('adapter.error.file-not-found', { filename: filename }));
+            this.displayScriptError(t('adapter.error.file-not-found', { filename: filename }));
             return;
         }
 
-        let contents = await this.noteToolbar?.app.vault.read(viewFile);
+        let contents = await this.ntb?.app.vault.read(viewFile);
         if (contents) {
             if (contents.includes("await")) contents = "(async () => { " + contents + " })()";
             contents += `\n//# sourceURL=${viewFile.path}`;
@@ -233,12 +232,12 @@ export default class DataviewAdapter extends Adapter {
          component.load();
          try {
              containerEl.empty();
-             let dataviewLocalApi = this.adapterPlugin.localApi(activeFilePath, this.noteToolbar, containerEl);    
+             let dataviewLocalApi = this.adapterPlugin.localApi(activeFilePath, this.ntb, containerEl);    
              // from dv.view: may directly render, in which case it will likely return undefined or null
              let result = await Promise.resolve(func(dataviewLocalApi, args));
-             if (result && this.noteToolbar) {
+             if (result && this.ntb) {
                  await this.adapterApi.renderValue(
-                     this.noteToolbar.app,
+                     this.ntb.app,
                      result as any,
                      containerEl,
                      activeFilePath,
@@ -249,7 +248,7 @@ export default class DataviewAdapter extends Adapter {
              }
          }
          catch (error) {
-             displayScriptError(t('adapter.error.exec-failed', { filename: viewFile.path }), error, containerEl);
+             this.displayScriptError(t('adapter.error.exec-failed', { filename: viewFile.path }), error, containerEl);
          }
          finally {
              component.unload();
@@ -273,7 +272,7 @@ export default class DataviewAdapter extends Adapter {
         let result = '';
         let resultEl = containerEl || createSpan();
 
-        const activeFile = this.noteToolbar?.app.workspace.getActiveFile();
+        const activeFile = this.ntb?.app.workspace.getActiveFile();
 
         const component = new Component();
         component.load();
@@ -299,7 +298,7 @@ export default class DataviewAdapter extends Adapter {
             }
         }
         catch (error) {
-            displayScriptError(t('adapter.error.expr-failed', { expression: expression }), error, containerEl);
+            this.displayScriptError(t('adapter.error.expr-failed', { expression: expression }), error, containerEl);
         }
         finally {
             component.unload();
@@ -321,10 +320,10 @@ export default class DataviewAdapter extends Adapter {
     private async query(expression: string, containerEl?: HTMLElement): Promise<string> {
 
         let result = '';
-        const activeFile = this.noteToolbar?.app.workspace.getActiveFile();
+        const activeFile = this.ntb?.app.workspace.getActiveFile();
 
         if (!activeFile) {
-            displayScriptError(t('adapter.error.query-note-not-open'));
+            this.displayScriptError(t('adapter.error.query-note-not-open'));
             return t('adapter.error.query-note-not-open');
         }
 
@@ -332,15 +331,15 @@ export default class DataviewAdapter extends Adapter {
         component.load();
         try {
             if (this.adapterApi) {
-                this.noteToolbar?.debug("query() " + expression);
+                this.ntb?.debug("query() " + expression);
                 // returns a Promise<Result<QueryResult, string>>
                 let dvResult = await (this.adapterApi as any).queryMarkdown(expression, activeFile, this.adapterApi.settings);
-                this.noteToolbar?.debug("query() result: ", dvResult);
+                this.ntb?.debug("query() result: ", dvResult);
                 if (containerEl) {
                     containerEl.empty();
-                    if (this.noteToolbar) {
+                    if (this.ntb) {
                         MarkdownRenderer.render(
-                            this.noteToolbar.app,
+                            this.ntb.app,
                             dvResult.successful ? dvResult.value : dvResult.error,
                             containerEl,
                             activeFile.path,
@@ -355,7 +354,7 @@ export default class DataviewAdapter extends Adapter {
             }
         }
         catch (error) {
-            displayScriptError(t('adapter.error.query-failed', { expression: expression }), error, containerEl);
+            this.displayScriptError(t('adapter.error.query-failed', { expression: expression }), error, containerEl);
             result = t('adapter.error.general', { error: error });
         }
         finally {

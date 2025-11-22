@@ -135,6 +135,7 @@
         "name-copy-cmd-as-data-element": "Copy callout item for command",
         "name-copy-cmd-uri": "Copy URI for command",
         "name-focus": "Focus",
+        "name-focus-text-toolbar": "Focus in text toolbar",
         "name-fold-properties": "Fold Properties",
         "name-hide-properties": "Hide Properties",
         "name-item-suggester": "Quick tools",
@@ -143,6 +144,7 @@
         "name-open-toolbar": "Open: {{toolbar}}",
         "name-settings": "Plugin settings",
         "name-show-properties": "Show Properties",
+        "name-toggle-base-toolbar": "Toggle Base toolbar",
         "name-toggle-lock-callouts": "Lock/Unlock Note Toolbar Callouts",
         "name-toggle-properties": "Toggle Properties",
         "name-toolbar-settings": "Toolbar settings",
@@ -257,6 +259,7 @@
         "button-delete-tooltip": "Delete",
         "button-drag-tooltip": "Drag to rearrange",
         "button-expand-tooltip": "Expand section",
+        "button-expand-collapse-tooltip": "Expand/Collapse section",
         "button-gallery": "Gallery",
         "button-gallery-tooltip": "Open the Gallery",
         "button-help": "Help",
@@ -295,10 +298,10 @@
         },
         "display-contexts": {
             "description": "Enable toolbars in canvases, PDFs, video, and other file types.",
-            "name": "File types and views",
+            "name": "File types",
             "option-audio": "Audio",
             "option-bases": "Bases",
-            "option-canvas": "Canvas files",
+            "option-canvas": "Canvases",
             "option-filemenu": "File menu",
             "option-filemenu-description": "Adds an item to the File menu to access the toolbar in the linked note.",
             "option-image": "Images",
@@ -309,14 +312,24 @@
             "option-other-placeholder": "e.g., excalidraw",
             "option-video": "Videos"
         },
-        "display-empty-view": {
-            "description": "Add a toolbar to the new tab view, or replace it with a toolbar.",
-            "name": "New tab view",
-            "option-emptyview": "New tab toolbar",
-            "option-emptyview-description": "Select an existing toolbar to show when no note is open.",
-            "option-emptyview-placeholder": "Select toolbar...",
-            "option-launchpad": "Replace view with toolbar",
-            "option-launchpad-description": "Replace the new tab view with this toolbar."
+        "display-locations": {
+            "description": "Define where toolbars are shown across the app.",
+            "name": "Toolbars within the app",
+            "option-emptyview-tbar": "New tab view",
+            "option-emptyview-tbar-description": "Display a toolbar when no note is open.",
+            "option-emptyview-tbar-placeholder": "Select toolbar...",
+            "option-launchpad": "Replace new tab view with toolbar",
+            "option-launchpad-description": "Replace the new tab view with a large version of this toolbar. If not enabled, the toolbar will be in the position selected in its settings.",
+            "option-text": "Selected text",
+            "option-text-description": "Display a toolbar when text is selected.",
+            "option-text-placeholder": "Select toolbar...",
+            "ribbon-action": {
+                "description": "Set the action to take when the ribbon icon (on phones) is used.",
+                "name": "Ribbon 📱",
+                "option-item-suggester": "Show all tools",
+                "option-toolbar": "Show current toolbar",
+                "option-toolbar-suggester": "Show all toolbars"
+            }
         },
         "display-rules": {
             "description": "Define which notes to display toolbars on, using a property, mappings, or both.",
@@ -327,6 +340,7 @@
         },
         "error-old-settings-description": "Old settings file loaded ({{oldVersion}}) but latest is {{currentVersion}}",
         "error-old-settings-name": "⚠️ Error: Please disable and renable Note Toolbar, or restart Obsidian.",
+        "error-invalid-text-toolbar": "Error: Selected text toolbar does not exist. Check your settings.",
         "help": {
             "button-donate": "Donate ↗",
             "button-donate-tooltip": "Open buymeacoffee.com",
@@ -381,14 +395,14 @@
             "menu-more-actions": "More actions...",
             "menu-move-item": "Move item to toolbar...",
             "menu-move-item-notice": "Moved item to toolbar: {{toolbarName}}",
-            "option-break": "break",
+            "option-break": "Break",
             "option-command": "Command",
             "option-command-error-does-not-exist": "This command does not exist.",
             "option-command-error-not-available-install": "This command is not available. Plugin must be installed and enabled.",
             "option-command-error-not-available-search": "This command cannot be found. Try searching again.",
             "option-command-error-refresh": "Refresh",
-            "option-command-check": "Hide if not available",
-            "option-command-check-description": "If the command cannot be performed in the current context, the item will be hidden in the toolbar.",
+            "option-command-check": "Disable if not available",
+            "option-command-check-description": "If the command cannot be performed in the current context, the item will be disabled in the toolbar.",
             "option-command-focus": "Focus in editor",
             "option-command-focus-description": "Set focus in editor after the command is executed.",
             "option-command-help": "Runs a command when this item is used.",
@@ -417,7 +431,7 @@
             "option-js-engine-help": "Executes or evaluates JavaScript using JS Engine.",
             "option-label-placeholder": "Label (optional, if icon set)",
             "option-menu": "Menu",
-            "option-separator": "separator",
+            "option-separator": "Separator",
             "option-script-focus": "Focus in editor",
             "option-script-focus-description": "Set focus in editor after the script is executed.",
             "option-target-default": "Default",
@@ -459,7 +473,7 @@
             "label-empty-no-items": "No results found.",
             "link-gallery": "Explore the Gallery...",
             "link-search": "Search for an item",
-            "option-new": "+ Create a new item",
+            "option-new": "Create a new item...",
             "placeholder": "Search for an item to add...",
             "placeholder-toolbar": "{{toolbar}}: Search items...",
             "placeholder-use": "Search for an item to use..."
@@ -515,13 +529,13 @@
                 "name": "Debugging"
             },
             "icon": {
-                "description": "Sets the icon for the floating button and navigation bar (on phone). Requires restart.",
+                "description": "Sets the icon for Note Toolbar when used in the tab bar, floating button, and navigation bar (on phone). Requires restart.",
                 "name": "Icon",
                 "tooltip": "Select icon"
             },
             "keep-props-state": {
                 "description": "Maintains the visibility state of Properties in notes, if you use Note Toolbar's options to toggle properties. If enabled, you will have to use Note Toolbar's \"Show note properties\" to show properties again.",
-                "name": "Keep properties state"
+                "name": "Keep properties view state"
             },
             "load-settings-changes": {
                 "description": "If you’re syncing plugin settings across devices, turn this on to automatically load toolbar updates. If not, you’ll need to restart Obsidian to see changes from other devices.",
@@ -532,19 +546,12 @@
                 "name": "Lock Note Toolbar Callouts"
             },
             "name": "Other",
-            "ribbon-action": {
-                "description": "Action to take when the ribbon icon (on phones) is used.",
-                "name": "Ribbon icon action 📱",
-                "option-item-suggester": "Show all tools",
-                "option-toolbar": "Show current toolbar",
-                "option-toolbar-suggester": "Show all toolbars"
-            },
             "scripting": {
                 "description": "Adds support for Dataview, JS Engine, and Templater, which must be installed and enabled.",
                 "name": "Scripting"
             },
             "show-edit-tbar": {
-                "description": "Adds an item to access the toolbar's settings in toolbars that are displayed as menus.",
+                "description": "Adds an item to access the toolbar's settings in toolbars that are displayed as menus, for convenience.",
                 "name": "Show \"Edit toolbar\" in toolbar menus"
             }
         },
@@ -637,7 +644,7 @@
             "instruction-navigate": "to navigate",
             "instruction-use": "to open toolbar",
             "option-default": "Default (use toolbar mapping)",
-            "option-new": "+ Create a new toolbar",
+            "option-new": "Create a new toolbar...",
             "placeholder": "Search for a toolbar...",
             "placeholder-add": "Add item to which toolbar?"
         },
@@ -692,13 +699,16 @@
         }
     },
     "toolbar": {
+        "item-unavailable-tooltip": "Item not available",
         "menu-add-item": "Add item...",
         "menu-edit-item": "Edit item: {{text}}...",
         "menu-edit-item_none": "Edit item...",
         "menu-edit-menu": "Edit menu toolbar: {{toolbar}}...",
         "menu-edit-toolbar": "Edit toolbar: {{toolbar}}...",
+        "menu-hide-base-toolbar": "Hide Base toolbar",
         "menu-hide-properties": "Hide note properties",
         "menu-position": "Set position",
+        "menu-show-base-toolbar": "Show Base toolbar",
         "menu-show-properties": "Show note properties",
         "menu-style": "Style...",
         "menu-swap-toolbar": "Swap toolbar...",

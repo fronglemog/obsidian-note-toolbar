@@ -342,7 +342,7 @@ settings:
         default-dark: '#'
     -
         id: cg-nt-item-text-color
-        title: 'Text color'
+        title: 'Icon + text color'
         title.uk: 'Колір тексту'
         title.de: 'Textfarbe'
         title.zh: '文本颜色'
@@ -353,7 +353,7 @@ settings:
         default-dark: '#'
     -
         id: cg-nt-item-text-color-hover
-        title: 'Text color (on hover)'
+        title: 'Icon + text color (on hover)'
         title.uk: 'Колір тексту (при наведенні)'
         title.de: 'Textfarbe (beim Überfahren mit der Maus)'
         title.zh: '鼠标悬停时的文本颜色'
@@ -667,7 +667,7 @@ settings:
         default-dark: '#'
     -
         id: cg-nt-quick-tools-item-text-color
-        title: '🎨 Text + Icon color'
+        title: '🎨 Icon + text color'
         title.uk: '🎨 Кольори тексту та іконки'
         title.de: '🎨 Text + Symbol-Farbe'
         title.zh: '🎨 文本和图标颜色'
@@ -678,7 +678,7 @@ settings:
         default-dark: '#'
     -
         id: cg-nt-quick-tools-item-text-color-hover
-        title: '🎨 Text + Icon color (on hover)'
+        title: '🎨 Icon + text color (on hover)'
         title.uk: '🎨 Кольори тексту та іконки (при наведенні)'
         title.de: '🎨 Text + Symbol-Farbe (beim Überfahren mit der Maus)'
         title.zh: '🎨 文字 + 图标颜色（悬停时）'
@@ -804,7 +804,7 @@ settings:
         title.uk: 'Колір рамки'
         title.de: 'Rand-Farbe'
         title.zh: '边框颜色'
-        description: 'Top + Bottom borders. The "border" style must be added to the toolbar first.'
+        description: 'Color of toolbar borders. The "border" style must be added to the toolbar first.'
         description.uk: 'Верхня та нижня рамки. Стиль "рамка" повинен бути додан до панелі.'
         description.de: 'Obere + untere Ränder'
         description.zh: '上下边框'
@@ -952,15 +952,45 @@ settings:
         level: 1
         collapsed: true
     -
-        id: cg-nt-tbar-bottom-border-radius
-        title: 'Toolbar border radius (in px units)'
-        title.zh: '工具栏边框圆角（单位：px）'
-        title.uk: 'Радіус закруглення рамки панелі (пікселі)'
-        description: 'How rounded the toolbar is. The higher the number, the more rounded.'
-        description.uk: 'Закруглення панелі. Чим більше число, тим більше округлення.'
+        id: toolbar-bottom-positioning
+        title: '↳ ↕ Positioning'
+        title.uk: '↳ ↕ Позиціонування'
+        title.de: '↳ ↕ Positionierung'
+        title.zh: '↳ ↕ 位置'
+        type: heading
+        level: 2
+        collapsed: true
+    -
+        id: cg-nt-tbar-bottom-pos-y-desktop
+        title: 'Y position on desktop (in em units)'
+        title.zh: '桌面端 Y 轴位置（单位：em）'
+        title.uk: "Позиція Y на комп'ютері (em)"
+        description: 'Distance from bottom edge.'
+        description.zh: '距编辑器视图底部的距离。'
+        description.uk: 'Відстань від нижнього краю.'
         type: variable-number
-        default: 5
-        format: px
+        default: 4.25
+        format: em
+    -
+        id: cg-nt-tbar-bottom-pos-y-mobile
+        title: 'Y position on mobile (in em units) 📱'
+        title.zh: '移动端 Y 轴位置（单位：em）📱'
+        title.uk: 'Позиція Y на мобільному (em) 📱'
+        description: "Distance from bottom edge."
+        description.zh: '距编辑器视图底部的距离。'
+        description.uk: 'Відстань від нижнього краю.'
+        type: variable-number
+        default: 1
+        format: em
+    -
+        id: toolbar-bottom-sizing-spacing
+        title: '↳ 📐 Sizing and Spacing'
+        title.uk: '↳ 📐 Розміри та інтервали'
+        title.de: '↳ 📐 Größe und Abstand'
+        title.zh: '↳ 📐 尺寸和间距'
+        type: heading
+        level: 2
+        collapsed: true
     -
         id: cg-nt-tbar-bottom-padding-x-desktop
         title: 'Left + Right toolbar padding on desktop (in px units)'
@@ -984,27 +1014,199 @@ settings:
         default: 24
         format: px
     -
-        id: cg-nt-tbar-bottom-pos-y-desktop
-        title: 'Y position on desktop (in em units)'
-        title.zh: '桌面端 Y 轴位置（单位：em）'
-        title.uk: "Позиція Y на комп'ютері (em)"
-        description: 'Distance from bottom edge.'
-        description.zh: '距编辑器视图底部的距离。'
-        description.uk: 'Відстань від нижнього краю.'
+        id: toolbar-bottom-styles
+        title: '↳ 😎 Style'
+        title.uk: '↳ 😎 Стиль'
+        title.de: '↳ 😎 Stil'
+        title.zh: '↳ 😎 样式'
+        type: heading
+        level: 2
+        collapsed: true
+    -
+        id: cg-nt-tbar-bottom-border-radius
+        title: 'Toolbar border radius (in px units)'
+        title.zh: '工具栏边框圆角（单位：px）'
+        title.uk: 'Радіус закруглення рамки панелі (пікселі)'
+        description: 'How rounded the toolbar is. The higher the number, the more rounded.'
+        description.zh: '工具栏的圆角程度。数值越高，圆角越明显。'
+        description.uk: 'Закруглення панелі. Чим більше число, тим більше округлення.'
         type: variable-number
-        default: 4.25
+        default: 5
+        format: px
+    -
+        id: toolbar-text-tbar
+        title: 'Toolbars (text)'
+        title.zh: '工具栏（文本）'
+        description: 'Styles for text toolbars'
+        description.zh: '文本工具栏的样式'
+        type: heading
+        level: 1
+        collapsed: true
+    -
+        id: toolbar-text-colors
+        title: '↳ 🎨 Colors'
+        title.uk: '↳ 🎨 Кольори'
+        title.de: '↳ 🎨 Farben'
+        title.zh: '↳ 🎨 颜色'
+        type: heading
+        level: 2
+        collapsed: true
+    -
+        id: cg-nt-tbar-text-border-color
+        title: 'Border color'
+        title.uk: 'Колір рамки'
+        title.de: 'Rand-Farbe'
+        title.zh: '边框颜色'
+        description: 'Color of toolbar border. The "border" style must be added to the toolbar first.'
+        description.uk: 'Верхня та нижня рамки. Стиль "рамка" повинен бути додан до панелі.'
+        description.de: 'Obere + untere Ränder'
+        description.zh: '上下边框'
+        type: variable-themed-color
+        opacity: true
+        format: hex
+        default-light: '#'
+        default-dark: '#'
+    -
+        id: cg-nt-tbar-text-item-bg-color-hover
+        title: 'Item: Background color (on hover)'
+        title.uk: 'Колір фону (при наведенні)'
+        title.de: 'Hintergrundfarbe (beim Überfahren mit der Maus)'
+        title.zh: '鼠标悬停时的背景颜色'
+        type: variable-themed-color
+        opacity: true
+        format: hex
+        default-light: '#'
+        default-dark: '#'
+    -
+        id: cg-nt-tbar-text-item-button-bg-color
+        title: 'Item: Background color (for button style)'
+        title.uk: 'Колір фону (стиль кнопки)'
+        title.de: 'Hintergrundfarbe (für Schaltflächen)'
+        title.zh: '按钮样式的背景颜色'
+        type: variable-themed-color
+        opacity: true
+        format: hex
+        default-light: '#'
+        default-dark: '#'
+    -
+        id: cg-nt-tbar-text-item-text-color
+        title: 'Icon + text color'
+        title.uk: 'Колір тексту'
+        title.de: 'Textfarbe'
+        title.zh: '文本颜色'
+        type: variable-themed-color
+        opacity: true
+        format: hex
+        default-light: '#'
+        default-dark: '#'
+    -
+        id: cg-nt-tbar-text-item-text-color-hover
+        title: 'Icon + text color (on hover)'
+        title.uk: 'Колір тексту (при наведенні)'
+        title.de: 'Textfarbe (beim Überfahren mit der Maus)'
+        title.zh: '鼠标悬停时的文本颜色'
+        type: variable-themed-color
+        opacity: true
+        format: hex
+        default-light: '#'
+        default-dark: '#'
+    -
+        id: tbar-text-item-sizing-spacing
+        title: '↳ 📐 Sizing and Spacing'
+        title.uk: '↳ 📐 Розміри та інтервали'
+        title.de: '↳ 📐 Größe und Abstände'
+        title.zh: '↳ 📐 大小和间距'
+        type: heading
+        level: 2
+        collapsed: true
+    -
+        id: cg-nt-tbar-text-max-width-desktop
+        title: 'Max width on desktop (in px units)'
+        description: 'How wide the toolbar is allowed to be.'
+        type: variable-number
+        default: 900
+        format: px
+    -
+        id: cg-nt-tbar-text-max-width-tablet
+        title: 'Max width on tablets (in px units)'
+        description: 'How wide the toolbar is allowed to be.'
+        type: variable-number
+        default: 650
+        format: px
+    -
+        id: cg-nt-tbar-text-item-font-size
+        title: 'Font size (in em units)'
+        title.uk: 'Розмір шрифту (em)'
+        title.de: 'Schriftgröße (in em)'
+        title.zh: '字体大小（单位：em）'
+        type: variable-number
+        default: 0.875
         format: em
     -
-        id: cg-nt-tbar-bottom-pos-y-mobile
-        title: 'Y position on mobile (in em units) 📱'
-        title.zh: '移动端 Y 轴位置（单位：em）📱'
-        title.uk: 'Позиція Y на мобільному (em) 📱'
-        description: "Distance from bottom edge."
-        description.zh: '距编辑器视图底部的距离。'
-        description.uk: 'Відстань від нижнього краю.'
+        id: cg-nt-tbar-text-item-icon-size
+        title: 'Icon size (in px units)'
+        title.uk: 'Розмір іконки (пікселі)'
+        title.de: 'Symbolgröße (in px)'
+        title.zh: '图标大小（单位：px）'
         type: variable-number
-        default: 1
+        default: 18
+        format: px
+    -
+        id: cg-nt-tbar-text-item-padding-x
+        title: 'Item: Left + Right padding (in em units)'
+        title.uk: 'Лівий та правий відступи (em)'
+        title.de: 'Linker + rechter Abstand (in em)'
+        title.zh: '左右内边距（单位：em）'
+        type: variable-number
+        default: 0.75
         format: em
+    -
+        id: cg-nt-tbar-text-item-padding-y
+        title: 'Item: Top + Bottom padding (in em units)'
+        title.uk: 'Верхній та нижній відступи (em)'
+        title.de: 'Oberer + unteren Abstand (in em)'
+        title.zh: '上下内边距（单位：em）'
+        type: variable-number
+        default: 0.5
+        format: em
+    -
+        id: toolbar-text-styles
+        title: '↳ 😎 Style'
+        title.uk: '↳ 😎 Стиль'
+        title.de: '↳ 😎 Stil'
+        title.zh: '↳ 😎 样式'
+        type: heading
+        level: 2
+        collapsed: true
+    -
+        id: cg-nt-tbar-text-border-radius
+        title: 'Toolbar border radius (in px units)'
+        title.zh: '工具栏边框圆角（单位：px）'
+        title.uk: 'Радіус закруглення рамки панелі (пікселі)'
+        description: 'How rounded the toolbar is. The higher the number, the more rounded.'
+        description.zh: '工具栏的圆角程度。数值越高，圆角越明显。'
+        description.uk: 'Закруглення панелі. Чим більше число, тим більше округлення.'
+        type: variable-number
+        default: 5
+        format: px
+    -
+        id: cg-nt-tbar-text-shadow
+        title: 'Shadow'
+        title.zh: '阴影'
+        description: 'Shadow behind the text toolbar'
+        description.zh: '文本工具栏背后的阴影'
+        type: variable-select
+        default: 'var(--shadow-s)'
+        options:
+            - 
+                label: 'None'
+                value: 'none'
+            - 
+                label: 'Input style'
+                value: 'var(--input-shadow)'
+            - 
+                label: 'Small style'
+                value: 'var(--shadow-s)'
     -
         id: ui
         title: 'Other UI'

@@ -3,11 +3,11 @@ import { ToolbarSettings } from "Settings/NoteToolbarSettings";
 import { exportToCallout } from "Utils/ImportExport";
 import { IToolbar } from "./IToolbar";
 
-export class Toolbar implements IToolbar {
+export default class Toolbar implements IToolbar {
 
     public readonly id?: string;
 
-    constructor(private plugin: NoteToolbarPlugin, private toolbar: ToolbarSettings) {
+    constructor(private ntb: NoteToolbarPlugin, private toolbar: ToolbarSettings) {
         this.id = toolbar.uuid;
     }
 
@@ -27,7 +27,7 @@ export class Toolbar implements IToolbar {
      */
     async export(): Promise<string | null> {
         if (this.toolbar) {
-            return await exportToCallout(this.plugin, this.toolbar, this.plugin.settings.export);
+            return await exportToCallout(this.ntb, this.toolbar, this.ntb.settings.export);
         }
         return null;
     }

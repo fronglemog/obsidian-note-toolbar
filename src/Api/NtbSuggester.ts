@@ -1,4 +1,4 @@
-import { App, Component, FuzzyMatch, FuzzySuggestModal, MarkdownRenderer } from "obsidian";
+import { Component, FuzzyMatch, FuzzySuggestModal, MarkdownRenderer } from "obsidian";
 import { t } from "Settings/NoteToolbarSettings";
 import { NtbSuggesterOptions } from "./INoteToolbarApi";
 import NoteToolbarPlugin from "main";
@@ -9,7 +9,7 @@ import NoteToolbarPlugin from "main";
  * Adapted from Templater:
  * @link https://github.com/SilentVoid13/Templater/blob/master/src/core/functions/internal_functions/system/SuggesterModal.ts
  */
-export class NtbSuggester<T> extends FuzzySuggestModal<T> {
+export default class NtbSuggester<T> extends FuzzySuggestModal<T> {
 
     private resolve: (value: T) => void;
     private reject: (reason?: Error) => void;
@@ -26,13 +26,13 @@ export class NtbSuggester<T> extends FuzzySuggestModal<T> {
      * @see INoteToolbarApi.suggester
      */
     constructor(
-        private plugin: NoteToolbarPlugin,
+        private ntb: NoteToolbarPlugin,
         private values: string[] | ((item: T) => string),
         private keys?: T[],
         options?: NtbSuggesterOptions 
     ) {
 
-        super(plugin.app);
+        super(ntb.app);
 
         const { 
             allowCustomInput = false,
@@ -77,7 +77,7 @@ export class NtbSuggester<T> extends FuzzySuggestModal<T> {
         if (this.label) {
             const headerEl = this.containerEl.createDiv('ntb-suggester-header');
             const component = new Component();
-            MarkdownRenderer.render(this.plugin.app, this.label, headerEl, "", component);
+            MarkdownRenderer.render(this.ntb.app, this.label, headerEl, "", component);
             this.modalEl.insertAdjacentElement('afterbegin', headerEl);
         }
 
@@ -137,7 +137,7 @@ export class NtbSuggester<T> extends FuzzySuggestModal<T> {
     renderSuggestion(item: FuzzyMatch<T>, el: HTMLElement): void {
         // renders text markdown, if provided
         const component = new Component();
-        if (this.rendermd) MarkdownRenderer.render(this.plugin.app, this.getItemText(item.item), el, '', component);
+        if (this.rendermd) MarkdownRenderer.render(this.ntb.app, this.getItemText(item.item), el, '', component);
         else el.setText(this.getItemText(item.item));
     }
 

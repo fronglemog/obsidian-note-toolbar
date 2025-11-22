@@ -1,4 +1,5 @@
 import NoteToolbarPlugin from "main";
+import { Notice } from "obsidian";
 import { ScriptConfig } from "Settings/NoteToolbarSettings";
 import { AdapterFunction } from "Types/interfaces";
 
@@ -6,7 +7,7 @@ export abstract class Adapter {
     
     abstract readonly FUNCTIONS: AdapterFunction[];
 
-    noteToolbar: NoteToolbarPlugin | null;
+    ntb: NoteToolbarPlugin | null;
     adapterApi: any | null;
     adapterPlugin: any | null;
 
@@ -17,7 +18,7 @@ export abstract class Adapter {
      * @param adapterApi API for the provided plugin.
      */
     constructor(notetoolbar: NoteToolbarPlugin, adapterPlugin: any, adapterApi: any) {
-        this.noteToolbar = notetoolbar;
+        this.ntb = notetoolbar;
         this.adapterApi = adapterApi;
         this.adapterPlugin = adapterPlugin;
     }
@@ -28,9 +29,27 @@ export abstract class Adapter {
     disable() {
         this.adapterApi = null;
         this.adapterPlugin = null;
-        this.noteToolbar = null;
+        this.ntb = null;
     }
 
+    /**
+     * Displays the provided scripting error as a console message, and is output to a container, if provided. 
+     * @param message 
+     * @param error 
+     * @param containerEl 
+     */
+    displayScriptError(message: string, error?: any, containerEl?: HTMLElement) {
+        console.error(message, error);
+        if (containerEl) {
+            let errorEl = containerEl.createEl('pre');
+            errorEl.setText(message + '\n' + error);
+        }
+        let errorFr = createFragment();
+        errorFr.append(message);
+        error ? errorFr.append('\n', error) : undefined;
+        new Notice(errorFr, 5000);
+    }
+    
     /**
      * Returns all functions for this adapter.
      */

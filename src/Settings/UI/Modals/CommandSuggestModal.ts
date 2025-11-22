@@ -2,18 +2,17 @@ import NoteToolbarPlugin from "main";
 import { Command, SuggestModal } from "obsidian";
 import { t } from "Settings/NoteToolbarSettings";
 
-export class CommandSuggestModal extends SuggestModal<Command> {
+export default class CommandSuggestModal extends SuggestModal<Command> {
 
-    public plugin: NoteToolbarPlugin;
     private commands: Command[];
-    private callback: (command: Command) => void;
 
-	constructor(plugin: NoteToolbarPlugin, callback: (command: Command) => void) {
-        super(plugin.app);
-        this.plugin = plugin;
-        this.callback = callback;
-        this.commands = Object.values(plugin.app.commands.commands);
-
+	constructor(
+        private ntb: NoteToolbarPlugin, 
+        private callback: (command: Command) => void
+    ) {
+        super(ntb.app);
+        this.commands = Object.values(ntb.app.commands.commands);
+        
         this.setPlaceholder(t('setting.command-suggest-modal.placeholder'));
         this.setInstructions([
             {command: '↑↓', purpose: t('setting.command-suggest-modal.instruction-navigate')},
