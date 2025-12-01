@@ -116,8 +116,11 @@ body[data-ntb-csstheme="Cupertino"].is-mobile.theme-dark {
             gap: 0rem;
             margin: var(--cg-nt-tbar-margin-y) 0;
             padding-inline-start: 0;
-            [data-tbar-position="bottom"] &, [data-tbar-position="text"] & {
+            [data-tbar-position="bottom"] & {
                 margin: var(--cg-nt-tbar-margin-y);
+            }
+            [data-tbar-position="text"] & {
+                margin: var(--cg-nt-tbar-text-margin-y) 0;
             }
         }
     
@@ -501,14 +504,21 @@ body[data-ntb-csstheme="Cupertino"].is-mobile.theme-dark {
 }
 
 /* Liquid Glass effect for the Cupertino theme, thanks to @aaaaalexis */
+/* Licensed under the MIT License; see the LICENSE file */
+body .callout[data-callout="note-toolbar"][data-callout-metadata*="glass"],
+body.is-mobile .callout[data-callout="note-toolbar"][data-callout-metadata*="mgls"],
 body[data-ntb-csstheme="Cupertino"] .callout[data-callout="note-toolbar"] {
-    &[data-callout-metadata*="button"] ul {
+    background: unset !important;
+    mix-blend-mode: normal !important;
+    & ul {
+        gap: var(--size-4-2);
         & a, span.external-link {
-            backdrop-filter: var(--blur-s);
-            box-shadow: var(--shadow-xs);
-            border: none;
-            background-color: var(--liquid-glass-background);
-            transition: var(--anim-duration-moderate);
+            background-color: var(--ntb-liquid-glass-background) !important;
+            backdrop-filter: var(--ntb-blur-s);
+            border: var(--border-width) solid var(--background-modifier-border);
+            border-radius: 32px;
+            box-shadow: var(--ntb-shadow-xs);
+            transition: var(--ntb-anim-duration-moderate);
         }
         @media (hover: hover) {
             & a:hover, span.external-link:hover {

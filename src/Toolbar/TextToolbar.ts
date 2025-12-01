@@ -20,6 +20,7 @@ export default function TextToolbar(ntb: NoteToolbarPlugin): ViewPlugin<TextTool
 }
 
 class TextToolbarClass implements PluginValue {
+    private isContextOpening: boolean = false;
     private isMouseDown: boolean = false;
     private isMouseSelection: boolean = false;
     private lastSelection: { from: number; to: number; text: string } | null = null;
@@ -38,6 +39,10 @@ class TextToolbarClass implements PluginValue {
         ntb.registerDomEvent(view.dom, 'mouseup', () => {
             this.isMouseDown = false;
         });
+        // also listen to mouseup on the document to catch releases outside the editor
+        ntb.registerDomEvent(activeDocument, 'mouseup', () => {
+            this.isMouseDown = false;
+        });
         ntb.registerDomEvent(view.dom, 'keydown', () => {
             this.isMouseSelection = false;
             this.isMouseDown = false;
@@ -51,6 +56,10 @@ class TextToolbarClass implements PluginValue {
                 ntb.render.removeTextToolbar();
             }
         });
+        ntb.registerDomEvent(view.dom, 'contextmenu', () => {
+            this.isContextOpening = true;
+        });
+
     }
 
     update(update: ViewUpdate) {
@@ -64,7 +73,7 @@ class TextToolbarClass implements PluginValue {
         
         // don't show toolbar until selection is complete
         if (this.isMouseDown) {
-            // plugin.debug('mousedown');
+            // this.ntb.debug('mousedown - exiting');
             return;
         };
 
@@ -74,6 +83,14 @@ class TextToolbarClass implements PluginValue {
         const selectFrom = selection.from;
         const selectTo = selection.to;
         const selectText = state.doc.sliceString(selection.from, selection.to);
+        // this.ntb.debug('selection:', selection);
+
+        // right-clicking for some reason selects the current line if it's empty
+        if (this.isContextOpening && selectTo === selectFrom + 1) {
+            this.ntb.debug('⛔️ selection is just new line - exiting');
+            this.isContextOpening = false;
+            return;
+        }
 
         if (!update.selectionSet) {
             if (this.ntb.render.isTextToolbarFocussed()) {

@@ -126,6 +126,7 @@ export const enum DefaultStyleType {
 	Border = 'border',
 	Button = 'button',
 	Center = 'center',
+	Glass = 'glass',
 	Inactive = 'inactive',
 	Wide = 'wide',
 	Left = 'left',
@@ -140,6 +141,7 @@ export const enum MobileStyleType {
 	NoBorder = 'mnbrder',
 	Button = 'mbtn',
 	Center = 'mctr',
+	Glass = 'mgls',
 	NoWide = 'mnwd',
 	NoWrap = 'mnwrp',
 	Wide = 'mwd',
@@ -221,6 +223,7 @@ export const enum ErrorBehavior {
 
 export interface NoteToolbarSettings {
 	debugEnabled: boolean;
+	editorMenuToolbar: string | null;
 	emptyViewToolbar: string | null;
 	export: ExportSettings;
 	folderMappings: Array<FolderMapping>;
@@ -245,6 +248,7 @@ export interface NoteToolbarSettings {
 
 export const DEFAULT_SETTINGS: NoteToolbarSettings = {
 	debugEnabled: false,
+	editorMenuToolbar: null,
 	emptyViewToolbar: null,
 	export: {
 		includeIcons: true,
@@ -586,6 +590,7 @@ export const DEFAULT_STYLE_OPTIONS: { [key: string]: string }[] = [
     { [DefaultStyleType.Border]: t('setting.styles.option-border') },
 	{ [DefaultStyleType.Button]: t('setting.styles.option-button') },
     { [DefaultStyleType.Center]: t('setting.styles.option-center') },
+    { [DefaultStyleType.Glass]: t('setting.styles.option-glass') },
 	{ [DefaultStyleType.Wide]: t('setting.styles.option-wide') },
 	{ [DefaultStyleType.Inactive]: t('setting.styles.option-inactive') },
     { [DefaultStyleType.Left]: t('setting.styles.option-left') },
@@ -611,6 +616,7 @@ export const MOBILE_STYLE_OPTIONS: { [key: string]: string }[] = [
 	{ [MobileStyleType.NoWide]: t('setting.styles.option-nowide') },
 	{ [MobileStyleType.NoWrap]: t('setting.styles.option-nowrap') },
 	{ [MobileStyleType.Wide]: t('setting.styles.option-wide') },
+	{ [MobileStyleType.Glass]: t('setting.styles.option-glass') },
     { [MobileStyleType.Left]: t('setting.styles.option-left') },
     { [MobileStyleType.NoBorder]: t('setting.styles.option-noborder') },
 	{ [MobileStyleType.NoTab ]: t('setting.styles.option-notab') },

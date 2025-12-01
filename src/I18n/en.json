@@ -315,6 +315,10 @@
         "display-locations": {
             "description": "Define where toolbars are shown across the app.",
             "name": "Toolbars within the app",
+            "option-editor-menu": "Editor menu",
+            "option-editor-menu-description": "Replaces the Editor menu with the chosen toolbar.",
+            "option-editor-menu-error": "Error: Editor menu toolbar not found. Check your settings.",
+            "option-editor-menu-placeholder": "Select toolbar...",
             "option-emptyview-tbar": "New tab view",
             "option-emptyview-tbar-description": "Display a toolbar when no note is open.",
             "option-emptyview-tbar-placeholder": "Select toolbar...",
@@ -616,6 +620,7 @@
             "option-default-empty": "No default styles set.",
             "option-default-name": "Default",
             "option-even": "space items evenly",
+            "option-glass": "glass",
             "option-inactive": "hide in inactive views",
             "option-left": "left align items",
             "option-mobile-description": "Override default styles.",

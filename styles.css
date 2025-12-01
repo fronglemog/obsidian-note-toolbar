@@ -1138,8 +1138,17 @@ settings:
         default: 650
         format: px
     -
+        id: cg-nt-tbar-text-margin-y
+        title: 'Top + Bottom margin (in em units)'
+        title.uk: 'Верхній та нижній відступи (em)'
+        title.de: 'Oberer + unterer Abstand (in em-Einheiten)'
+        title.zh: '上下边距（单位：em）'
+        type: variable-number
+        default: 0.5
+        format: em
+    -
         id: cg-nt-tbar-text-item-font-size
-        title: 'Font size (in em units)'
+        title: 'Item: Font size (in em units)'
         title.uk: 'Розмір шрифту (em)'
         title.de: 'Schriftgröße (in em)'
         title.zh: '字体大小（单位：em）'
@@ -1148,7 +1157,7 @@ settings:
         format: em
     -
         id: cg-nt-tbar-text-item-icon-size
-        title: 'Icon size (in px units)'
+        title: 'Item: Icon size (in px units)'
         title.uk: 'Розмір іконки (пікселі)'
         title.de: 'Symbolgröße (in px)'
         title.zh: '图标大小（单位：px）'
@@ -1260,6 +1269,7 @@ body {
     --cg-nt-tbar-text-item-bg-color-hover: var(--background-modifier-hover);
     --cg-nt-tbar-text-item-text-color: var(--metadata-label-text-color);
     --cg-nt-tbar-text-item-text-color-hover: var(--text-normal);
+    --cg-nt-tbar-text-margin-y: 0.5em;
     --cg-nt-tbar-text-max-width-desktop: 900px;
     --cg-nt-tbar-text-max-width-phone: calc(100vw - 32px);
     --cg-nt-tbar-text-max-width-tablet: 650px;
@@ -1331,23 +1341,47 @@ body {
         --cg-nt-fab-border-color: var(--interactive-accent);
     }
 
-    /* default adjustments for various themes */
+    /*
+     * Glass effect variables (thanks to @aaaaalexis)
+     * Licensed under the MIT License; see the LICENSE file.
+     */
+    --ntb-anim-duration-moderate: 320ms;
+    --ntb-blur-s: blur(2px) saturate(1.5) brightness(1.05);
+    &.theme-light {
+        --ntb-liquid-glass-background: rgba(255, 255, 255, 0.5);
+        --ntb-shadow-base: inset 1px 1px 2px rgba(255, 255, 255, 0.5), inset -1px -1px 2px rgba(255, 255, 255, 0.5), inset 0 4px 16px rgba(255, 255, 255, 0.025);
+        --ntb-shadow-xs: var(--ntb-shadow-base), inset 0 -8px 48px rgba(0, 0, 0, 0.02), 0 0 8px rgba(0, 0, 0, 0.025), 0 4px 48px rgba(0, 0, 0, 0.15);
+    }
+    &.theme-dark {
+        --ntb-liquid-glass-background: rgba(255, 255, 255, 0.075);
+        --ntb-shadow-base: inset 1px 1.5px 1px -1px rgba(255, 255, 255, 0.2), inset -1px -1.5px 1px -1px rgba(255, 255, 255, 0.15), inset 0 4px 16px rgba(255, 255, 255, 0.025);
+        --ntb-shadow-xs: var(--ntb-shadow-base);
+    }
+
+    /*
+     * Default adjustments for various themes
+     */
     &[data-ntb-csstheme="Baseline"] {
-        --cg-nt-fab-pos-x-mobile: var(--navbar-side-padding);
         --cg-nt-tbar-top-sticky-pos-desktop: calc(var(--header-height) * -1 + 16px);
         --cg-nt-tbar-top-sticky-pos-mobile: calc(1rem * -1 + 1px);
-        &.is-phone {
-            --cg-nt-fab-pos-y-mobile: calc(48px + var(--navbar-bottom-padding) + 1rem);
-        }
     }
     &[data-ntb-csstheme="Cupertino"] {
-        --cg-nt-fab-pos-x-mobile: var(--navbar-side-padding);
         --cg-nt-tbar-top-sticky-pos-desktop: calc(var(--header-height) * -1 + 24px);
-        &.is-mobile.theme-dark {
-            --cg-nt-tbar-bg-color: #000;
-        }
+        --ntb-anim-duration-moderate: var(--anim-duration-moderate);
+        /* --ntb-blur-s: var(--blur-s); */
+        --ntb-liquid-glass-background: var(--liquid-glass-background);
+        --ntb-shadow-base: var(--shadow-base);
+        --ntb-shadow-xs: var(--shadow-xs);
+    }
+    &[data-ntb-csstheme="Baseline"], &[data-ntb-csstheme="Cupertino"] {        
+        --cg-nt-fab-pos-x-mobile: var(--navbar-side-padding);
         &.is-phone {
             --cg-nt-fab-pos-y-mobile: calc(48px + var(--navbar-bottom-padding) + 1rem);
+            --cg-nt-tbar-bottom-pos-y-mobile: calc(48px + var(--navbar-bottom-padding) + 1rem);
+            --cg-nt-tbar-top-sticky-pos-mobile: calc(98px);
+        }
+        &.is-mobile.theme-dark {
+            --cg-nt-tbar-bg-color: unset !important;
         }
     }
     &[data-ntb-csstheme="Minimal"] {
@@ -1477,8 +1511,11 @@ body[data-ntb-csstheme="Cupertino"].is-mobile.theme-dark {
             gap: 0rem;
             margin: var(--cg-nt-tbar-margin-y) 0;
             padding-inline-start: 0;
-            [data-tbar-position="bottom"] &, [data-tbar-position="text"] & {
+            [data-tbar-position="bottom"] & {
                 margin: var(--cg-nt-tbar-margin-y);
+            }
+            [data-tbar-position="text"] & {
+                margin: var(--cg-nt-tbar-text-margin-y) 0;
             }
         }
     
@@ -1861,14 +1898,21 @@ body[data-ntb-csstheme="Cupertino"].is-mobile.theme-dark {
     
 }
 /* Liquid Glass effect for the Cupertino theme, thanks to @aaaaalexis */
+/* Licensed under the MIT License; see the LICENSE file */
+body .callout[data-callout="note-toolbar"][data-callout-metadata*="glass"],
+body.is-mobile .callout[data-callout="note-toolbar"][data-callout-metadata*="mgls"],
 body[data-ntb-csstheme="Cupertino"] .callout[data-callout="note-toolbar"] {
-    &[data-callout-metadata*="button"] ul {
+    background: unset !important;
+    mix-blend-mode: normal !important;
+    & ul {
+        gap: var(--size-4-2);
         & a, span.external-link {
-            backdrop-filter: var(--blur-s);
-            box-shadow: var(--shadow-xs);
-            border: none;
-            background-color: var(--liquid-glass-background);
-            transition: var(--anim-duration-moderate);
+            background-color: var(--ntb-liquid-glass-background) !important;
+            backdrop-filter: var(--ntb-blur-s);
+            border: var(--border-width) solid var(--background-modifier-border);
+            border-radius: 32px;
+            box-shadow: var(--ntb-shadow-xs);
+            transition: var(--ntb-anim-duration-moderate);
         }
         @media (hover: hover) {
             & a:hover, span.external-link:hover {
@@ -1995,13 +2039,16 @@ body:not(.is-mobile):not(.is-focused), .workspace-leaf:not(.mod-active) {
         cursor: pointer;
     }
 }
-/* Liquid Glass effect for the Cupertino theme, thanks to @aaaaalexis */
+/* Liquid Glass effect for the Cupertino (thanks to @aaaaalexis) */
+/* Licensed under the MIT License; see the LICENSE file */
+body button.cg-note-toolbar-fab[data-fab-metadata*="glass"],
+body.is-mobile button.cg-note-toolbar-fab[data-fab-metadata*="mgls"],
 body[data-ntb-csstheme="Cupertino"] button.cg-note-toolbar-fab {
-    background-color: var(--liquid-glass-background) !important;
-    backdrop-filter: var(--blur-s) !important;
+    background-color: var(--ntb-liquid-glass-background) !important;
+    backdrop-filter: var(--ntb-blur-s) !important;
     border: var(--border-width) solid var(--background-modifier-border);
-    box-shadow: var(--shadow-xs);
-    transition: var(--anim-duration-moderate);
+    box-shadow: var(--ntb-shadow-xs);
+    transition: var(--ntb-anim-duration-moderate);
     & svg {
         color: var(--text-normal);
     }
@@ -2012,8 +2059,8 @@ body[data-ntb-csstheme="Cupertino"] button.cg-note-toolbar-fab {
     }
     .is-mobile & {
         &:is(:active, :hover, :focus-visible) {
-            background-color: var(--liquid-glass-background) !important;
-             color: var(--text-normal) !important;
+            background-color: var(--ntb-liquid-glass-background) !important;
+            color: var(--text-normal) !important;
         }
     }
 }
