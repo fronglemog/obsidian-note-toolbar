@@ -1953,6 +1953,11 @@ body:not(.is-mobile):not(.is-focused), .workspace-leaf:not(.mod-active) {
             border: solid 1px var(--cg-nt-fab-border-color);
         }
     }
+    & button[data-fab-metadata*="inactive"] {
+        body:not(.is-mobile):not(.is-focused) &, .workspace-leaf:not(.mod-active) & {
+            display: none;
+        }
+    }
 }
 .cg-note-toolbar-fab-container {
     bottom: var(--cg-nt-fab-pos-y-desktop);
@@ -3989,6 +3994,11 @@ input[type="text"].note-toolbar-setting-error,
         border: solid 1px var(--cg-nt-tbar-border-color) !important;
         border-radius: var(--button-radius) !important;
         padding: 1em;
+    }
+    &[data-callout-metadata*="glass"] {
+        & .callout-content ul[role="menu"] li {
+            background-color: unset;
+        }
     }
 
 }
