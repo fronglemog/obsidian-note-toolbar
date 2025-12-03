@@ -7,6 +7,8 @@ import StyleModal from "Settings/UI/Modals/StyleModal";
 import ToolbarSettingsModal from "Settings/UI/Modals/ToolbarSettingsModal";
 import { openItemSuggestModal, learnMoreFr } from "Settings/UI/Utils/SettingsUIUtils";
 import { exportToCallout, importFromCallout } from "Utils/ImportExport";
+import { TbarData } from "./ToolbarRenderer";
+import { EditorView } from "@codemirror/view";
 
 /**
  * Handles toolbar events registered with Obsidian's `registerEvent()`. 
@@ -68,6 +70,7 @@ export default class ToolbarEventHandler {
 		// figure out what toolbar we're in
 		let toolbarEl = (mouseEvent.target as Element).closest('.cg-note-toolbar-container') as HTMLElement;
 		let toolbarSettings = toolbarEl?.id ? this.ntb.settingsManager.getToolbarById(toolbarEl.id) : undefined;
+		const isTextToolbar = toolbarEl.getAttribute(TbarData.Position) === PositionType.Text;
 
 		// figure out what item was clicked on (if any)
 		let toolbarItemEl: Element | null = null;
@@ -83,7 +86,6 @@ export default class ToolbarEventHandler {
 
 		const currentView = this.ntb.app.workspace.getActiveViewOfType(ItemView);
 		const currentPosition = toolbarSettings ? this.ntb.settingsManager.getToolbarPosition(toolbarSettings) : undefined;
-		const isTextToolbar = toolbarSettings ? (this.ntb.settings.textToolbar === toolbarSettings.uuid) : false;
 
 		if (toolbarSettings !== undefined) {
 
@@ -383,6 +385,13 @@ export default class ToolbarEventHandler {
 				menu.items = [];
 				// not replacing variables here, because we need to call it synchronously
 				this.ntb.render.renderMenuItems(menu, toolbar, activeFile, undefined, false);
+				// const toolbar = this.ntb.settingsManager.getToolbarById(this.ntb.settings.editorMenuToolbar);
+				// const editor = this.ntb.app.workspace.activeEditor?.editor;
+				// if (!editor) return;
+				// const offset = editor.posToOffset(editor.getCursor());
+				// const cmView = (editor as any).cm as EditorView;
+				// const coords = cmView.coordsAtPos(offset);
+				// await this.ntb.render.renderTextToolbar(toolbar, coords, coords);
 				return;
 			}
 			else {
