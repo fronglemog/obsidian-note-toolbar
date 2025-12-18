@@ -10,6 +10,7 @@ export enum TbarData {
 	FabMeta = 'data-fab-metadata',
 	Name = 'data-name',
 	Position = 'data-tbar-position',
+	Replace = 'data-replace',
 	Updated = 'data-updated',
 	ViewMode = 'data-view-mode'
 }
@@ -19,11 +20,15 @@ export enum TbarData {
  */
 export default class ToolbarRenderer {
 
+	mouseX: number = 0;
+	mouseY: number = 0;
     textToolbarEl: HTMLDivElement | null = null;
     
 	activeViewIds: string[] = []; // track opened views, to reduce unneccesary toolbar re-renders
     isRendering: Record<string, boolean> = {}; // track if a toolbar is being rendered in a view, to prevent >1 event from triggering two renders
-    
+	mobileNavbarMargin: number;
+	viewHeaderMargin: number;
+
     constructor(
         private ntb: NoteToolbarPlugin
     ) {}
@@ -210,6 +215,10 @@ export default class ToolbarRenderer {
         // add the toolbar to the editor or modal UI
         const viewEl = view?.containerEl as HTMLElement | null;
         const modalEl = activeDocument.querySelector('.modal-container .note-toolbar-ui') as HTMLElement;
+		const navbarEl = activeDocument.querySelector('.mobile-navbar');
+		// move Navbar left/right to make room for the FAB
+		navbarEl?.toggleClass('note-toolbar-navbar-right', position === PositionType.FabLeft);
+		navbarEl?.toggleClass('note-toolbar-navbar-left', position === PositionType.FabRight);
         switch(position) {
             case PositionType.Bottom:
                 // position relative to modal container if in a modal
@@ -221,8 +230,14 @@ export default class ToolbarRenderer {
             case PositionType.FabLeft:
             case PositionType.FabRight:
                 // position relative to modal container if in a modal
-                if (modalEl) modalEl.appendChild(embedBlock)
-                else viewEl?.appendChild(embedBlock);
+                if (modalEl) modalEl.appendChild(embedBlock);
+                else if (Platform.isPhone) {
+					// TODO: remove Navbar configured items if needed
+					navbarEl?.insertAdjacentElement('afterend', embedBlock);
+				}
+				else {
+					viewEl?.appendChild(embedBlock);
+				}
                 break;
             case PositionType.TabBar: {
                 const viewActionsEl = viewEl?.querySelector('.view-actions') as HTMLElement;
@@ -793,6 +808,7 @@ export default class ToolbarRenderer {
 		// if we have a toolbarEl, double-check toolbar's name and updated stamp are as provided
 		let toolbarElName = toolbarEl?.getAttribute(TbarData.Name);
 		let toolbarElUpdated = toolbarEl?.getAttribute(TbarData.Updated);
+		let toolbarElOverride = toolbarEl?.getAttribute(TbarData.Replace);
 		if (toolbarEl === null || toolbar.name !== toolbarElName || toolbar.updated !== toolbarElUpdated) {
 			this.ntb.debugGroupEnd();
 			return;
@@ -861,6 +877,40 @@ export default class ToolbarRenderer {
 		// re-align bottom toolbar in case width changed 
 		if (currentPosition === PositionType.Bottom) {
 			this.renderBottomToolbarStyles(toolbar, toolbarEl);
+		}
+
+		// on phoness, reposition the header and navigation bars
+		if (Platform.isPhone) {
+
+			// position Obsidian Navbar above toolbar
+			const mobileNavbarEl = activeDocument.querySelector('.mobile-navbar') as HTMLElement;
+			if (mobileNavbarEl) {
+				if (currentPosition === PositionType.Bottom) {
+					if (!this.mobileNavbarMargin) {
+						// only calculate this once, so we don't keep adding it
+						this.mobileNavbarMargin = parseInt(activeWindow.getComputedStyle(mobileNavbarEl).marginBottom);
+					}
+					mobileNavbarEl.style.marginBottom = (this.mobileNavbarMargin + toolbarEl.offsetHeight) + 'px';	
+				}
+				else {
+					mobileNavbarEl.style.marginBottom = ''; // reset style
+				}
+			}
+
+			// position header bar below toolbar
+			const viewHeaderEl = activeDocument.querySelector('.view-header') as HTMLElement;
+			if (viewHeaderEl) {
+				if (currentPosition === PositionType.Top) {
+					if (!this.viewHeaderMargin) {
+						// only calculate this once, so we don't keep adding it
+						this.viewHeaderMargin = parseInt(activeWindow.getComputedStyle(viewHeaderEl).marginTop);
+					}
+					viewHeaderEl.style.marginTop = (this.viewHeaderMargin + toolbarEl.offsetHeight) + 'px';
+				}
+				else {
+					viewHeaderEl.style.marginTop = ''; // reset style
+				}
+			}
 		}
 
 		this.ntb.debugGroupEnd();
@@ -1131,6 +1181,7 @@ export default class ToolbarRenderer {
 		const toolbarView: ItemView | MarkdownView | null = view ? view : this.ntb.app.workspace.getActiveViewOfType(MarkdownView);
 
 		// this.ntb.debug('checkRemoveToolbarEl: existing toolbar');
+		const existingToolbarOverride = existingToolbarEl.getAttribute(TbarData.Replace);
 		const existingToolbarName = existingToolbarEl?.getAttribute(TbarData.Name);
 		const existingToolbarUpdated = existingToolbarEl.getAttribute(TbarData.Updated);
 		const existingToolbarHasSibling = existingToolbarEl.nextElementSibling;

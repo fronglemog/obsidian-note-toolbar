@@ -2,7 +2,7 @@ import { getUUID } from "Utils/Utils";
 import { getLanguage, PaneType } from "obsidian";
 
 /* updates link to plugin's release notes and displays What's New view */
-export const WHATSNEW_VERSION = '1.26';
+export const WHATSNEW_VERSION = '1.27';
 
 /* only update when settings structure changes to trigger migrations */
 export const SETTINGS_VERSION = 20250313.1;
@@ -223,6 +223,7 @@ export const enum ErrorBehavior {
 
 export interface NoteToolbarSettings {
 	debugEnabled: boolean;
+	editorMenuAsToolbar: boolean;
 	editorMenuToolbar: string | null;
 	emptyViewToolbar: string | null;
 	export: ExportSettings;
@@ -248,6 +249,7 @@ export interface NoteToolbarSettings {
 
 export const DEFAULT_SETTINGS: NoteToolbarSettings = {
 	debugEnabled: false,
+	editorMenuAsToolbar: false,
 	editorMenuToolbar: null,
 	emptyViewToolbar: null,
 	export: {

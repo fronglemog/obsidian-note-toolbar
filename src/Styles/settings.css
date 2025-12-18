@@ -61,8 +61,8 @@
 }
 
 .note-toolbar-setting-toolbar-list {
-    border-radius: 8px;
-    border: 1px solid var(--background-modifier-border);
+    background-color: var(--setting-items-background);
+    border-radius: var(--setting-items-radius);
     margin: 0em 0em 1em 0em;
     padding: 1em 1em;
     .is-mobile & {
@@ -72,6 +72,7 @@
         }
     }
     & .setting-item {
+        background-color: transparent !important;
         padding: 0.5em;
         margin: 0.25em;
         /* options button */
@@ -393,6 +394,10 @@ input[type="text"].note-toolbar-setting-error,
     padding-bottom: 1em !important;
 }
 
+.note-toolbar-setting-no-background {
+    background-color: transparent !important;
+}
+
 .note-toolbar-setting-no-border {
     border-top: none !important;
 }
@@ -437,6 +442,8 @@ input[type="text"].note-toolbar-setting-error,
     & .setting-item {
         align-items: center !important;
         border-bottom: none !important;
+        margin-bottom: 0 !important;
+        padding: unset;
     }
     & .note-toolbar-setting-item-fields {
         padding-right: 8px;
@@ -455,6 +462,8 @@ input[type="text"].note-toolbar-setting-error,
 .note-toolbar-setting-items-header {
     border-bottom: 1px solid var(--background-modifier-border) !important;
     border-width: 0 0 var(--border-width) 0 !important;
+    border-radius: 0%;
+    padding-bottom: 1em;
     margin-bottom: 1em;
 }
 
@@ -467,7 +476,6 @@ input[type="text"].note-toolbar-setting-error,
     padding-top: 0.75em;
     & .setting-item-heading {
         flex-direction: row !important;
-        padding: 0.75em 0;
         & .setting-item-info {
             cursor: pointer;
         }
@@ -483,6 +491,7 @@ input[type="text"].note-toolbar-setting-error,
     }
     & #tbar-search {
         padding-top: 0;
+        margin-bottom: 0;
         & .setting-item-info {
             display: none;
         }
@@ -513,7 +522,6 @@ input[type="text"].note-toolbar-setting-error,
             transition: 0.1s;
         }
         & .setting-item-heading {
-            border-bottom: solid 1px var(--background-modifier-border);
             margin-bottom: 0.75em;
         }
     }
@@ -546,18 +554,7 @@ input[type="text"].note-toolbar-setting-error,
 .note-toolbar-setting-contexts-container,
 .note-toolbar-setting-mappings-container {
     &[data-active="true"] {
-        border-bottom: solid 1px var(--background-modifier-border);
         margin-bottom: 0.75em;
-        & .setting-item-heading {
-            border-bottom: solid 1px var(--background-modifier-border);
-            margin-bottom: 0.75em;
-        }
-    }
-    &[data-active="false"] {
-        & .setting-item-heading {
-            border-bottom: solid 1px var(--background-modifier-border);
-            margin-bottom: 0;
-        }
     }
 }
 
@@ -627,6 +624,7 @@ input[type="text"].note-toolbar-setting-error,
 
 .note-toolbar-setting-item-icon {
     padding-top: 0 !important;
+    padding-bottom: 0 !important;
     & .setting-item-info {
         display: none;
     }
@@ -671,6 +669,7 @@ input[type="text"].note-toolbar-setting-error,
     border-top: none !important;
     flex-grow: 1;
     padding-top: 0 !important;
+    padding-bottom: 0 !important;
     .is-mobile & {
         padding-bottom: 0.75em;            
     }
@@ -697,7 +696,7 @@ input[type="text"].note-toolbar-setting-error,
     gap: 0.75em;
     width: 100%;
     & .setting-item {
-        padding: 0 !important;
+        /* padding: 0 !important; */
         & .setting-item-info {
             display: none;
         }
@@ -716,7 +715,7 @@ input[type="text"].note-toolbar-setting-error,
     flex-grow: 1;
     flex-wrap: wrap;
     column-gap: 1em;
-    row-gap: 1em;
+    /* row-gap: 1em; */
     & .setting-item {
         padding: 0;
     }
@@ -1042,7 +1041,7 @@ input[type="text"].note-toolbar-setting-error,
                 top: 0;
                 bottom: 0;
                 width: 33%;
-                background: linear-gradient(to right, transparent, var(--modal-background));
+                background: linear-gradient(to right, transparent, var(--setting-items-background));
                 pointer-events: none;
             }
         }
@@ -1054,6 +1053,7 @@ input[type="text"].note-toolbar-setting-error,
     flex-grow: 1;
     flex-wrap: wrap;
     gap: 0.5em 1em;
+    padding-bottom: 0.25em;
 }
 
 .note-toolbar-setting-item-styles {
@@ -1072,7 +1072,7 @@ input[type="text"].note-toolbar-setting-error,
     .setting-item {
         border-top: none !important;
         border: dashed 1px var(--pill-color-remove) !important;
-        border-radius: var(--pill-radius);
+        border-radius: var(--pill-radius) !important;
         padding-top: 0 !important;
         padding-bottom: 0 !important;
         padding-inline: 0.75em 0.25em !important;
@@ -1215,33 +1215,28 @@ input[type="text"].note-toolbar-setting-error,
     }
 }
 
-.note-toolbar-setting-modal-phone-top-inset-fix {
-    .is-phone & {
+.is-phone {
+    & .note-toolbar-setting-modal-phone-top-inset-fix {
         /* fix/workaround for Obsidian v1.5.11 bug: tall modals opened from settings have an inaccessible close button */
         top: var(--safe-area-inset-top);
     }
-}
-
-.note-toolbar-setting-modal-phone-bottom-inset-fix {
-    .is-phone & {
+    & .note-toolbar-setting-modal-phone-bottom-inset-fix {
         padding-bottom: var(--safe-area-inset-bottom);
     }
 }
 
 .note-toolbar-setting-modal-container {
+    & .setting-item-heading {
+        padding-left: 0;
+        padding-right: 0;
+    }
     & .modal-close-button {
         z-index: 2; /* fix for modal title overlapping close button */
-        /* general ux improvement for small screens */
-        .is-mobile & {
-            background-color: var(--background-secondary-alt);
-            border-radius: var(--radius-xl);
-            inset-inline-end: var(--size-4-3);
-            top: var(--size-4-3);
-        }
     }
 }
 
 .vertical-tab-content.note-toolbar-setting-modal {
+    background-color: transparent !important;
     padding-bottom: var(--size-4-5);
     padding-inline-start: var(--size-4-5);
     padding-inline-end: var(--size-4-5);
