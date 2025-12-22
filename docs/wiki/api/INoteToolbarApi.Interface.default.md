@@ -244,7 +244,7 @@ All toolbars.
 
 ### menu()
 
-> **menu**: (`items`, `options?`) => `Promise`\<`void`\>
+> **menu**: (`toolbarOrItems`, `options?`) => `Promise`\<`void`\>
 
 Shows a menu with the provided items.
 
@@ -252,10 +252,11 @@ Shows a menu with the provided items.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `items` | [`NtbMenuItem`](INoteToolbarApi.Interface.NtbMenuItem.md)[] | Array of items to display. See [NtbMenuItem](INoteToolbarApi.Interface.NtbMenuItem.md). |
-| `options?` | \{ `class?`: `string`; `focusInMenu?`: `boolean`; \} | Optional display options. |
+| `toolbarOrItems` | `string` \| [`NtbMenuItem`](INoteToolbarApi.Interface.NtbMenuItem.md)[] | Toolbar name or UUID; or an array of items to display. See [NtbMenuItem](INoteToolbarApi.Interface.NtbMenuItem.md). |
+| `options?` | \{ `class?`: `string`; `focusInMenu?`: `boolean`; `showAtCursor?`: `boolean`; \} | Optional display options. |
 | `options.class?` | `string` | Optional CSS class(es) to add to the component. |
 | `options.focusInMenu?` | `boolean` | If `true`, the menu item will be focused when the menu opens; defaults to `false`. |
+| `options.showAtCursor?` | `boolean` | If `true`, the menu will be shown at the cursor position; defaults to `false`. |
 
 #### Returns
 
@@ -266,6 +267,12 @@ Nothing. Displays the menu.
 #### Examples
 
 ```ts
+// show the "Daily Notes" toolbar as a menu
+await ntb.menu('Daily Notes');
+```
+
+```ts
+// create a menu from scratch
 await ntb.menu([
   { type: 'command', value: 'editor:toggle-bold', label: 'Toggle Bold', icon: 'bold' },
   { type: 'file', value: 'Home.md', label: 'Open File' },
