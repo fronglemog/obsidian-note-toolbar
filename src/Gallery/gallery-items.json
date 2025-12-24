@@ -1208,6 +1208,102 @@
         "type": "command"
     },
     {
+        "id": "search-selection",
+        "description": {
+            "en": "Search the vault for the currently selected text."
+        },
+        "icon": "search",
+        "tooltip": {
+            "en": "Search for selection"
+        },
+        "type": "uri",
+        "uri": "obsidian://search?query={{encode:selection}}"
+    },
+    {
+        "id": "set-heading-1",
+        "commandCheck": true,
+        "commandId": "editor:set-heading-1",
+        "description": {
+            "en": "Set as heading 1"
+        },
+        "focus": "editor",
+        "icon": "heading-1",
+        "tooltip": {
+            "en": "Heading 1"
+        },
+        "type": "command"
+    },
+    {
+        "id": "set-heading-2",
+        "commandCheck": true,
+        "commandId": "editor:set-heading-2",
+        "description": {
+            "en": "Set as heading 2"
+        },
+        "focus": "editor",
+        "icon": "heading-2",
+        "tooltip": {
+            "en": "Heading 2"
+        },
+        "type": "command"
+    },
+    {
+        "id": "set-heading-3",
+        "commandCheck": true,
+        "commandId": "editor:set-heading-3",
+        "description": {
+            "en": "Set as heading 3"
+        },
+        "focus": "editor",
+        "icon": "heading-3",
+        "tooltip": {
+            "en": "Heading 3"
+        },
+        "type": "command"
+    },
+    {
+        "id": "set-heading-4",
+        "commandCheck": true,
+        "commandId": "editor:set-heading-4",
+        "description": {
+            "en": "Set as heading 4"
+        },
+        "focus": "editor",
+        "icon": "heading-4",
+        "tooltip": {
+            "en": "Heading 4"
+        },
+        "type": "command"
+    },
+    {
+        "id": "set-heading-5",
+        "commandCheck": true,
+        "commandId": "editor:set-heading-5",
+        "description": {
+            "en": "Set as heading 5"
+        },
+        "focus": "editor",
+        "icon": "heading-5",
+        "tooltip": {
+            "en": "Heading 5"
+        },
+        "type": "command"
+    },
+    {
+        "id": "set-heading-6",
+        "commandCheck": true,
+        "commandId": "editor:set-heading-6",
+        "description": {
+            "en": "Set as heading 6"
+        },
+        "focus": "editor",
+        "icon": "heading-6",
+        "tooltip": {
+            "en": "Heading 6"
+        },
+        "type": "command"
+    },
+    {
         "id": "set-workspace",
         "description": {
             "en": "Changes to a specific workspace you provide.",
@@ -1657,6 +1753,19 @@
             "en": "Toggle numbered list",
             "zh": "切换有序列表",
             "uk": "Нумерований список"
+        },
+        "type": "command"
+    },
+    {
+        "id": "toggle-keyboard",
+        "commandId": "editor:toggle-keyboard",
+        "description": {
+            "en": "Toggles the keyboard"
+        },
+        "excludeOn": ["desktop", "tablet"],
+        "icon": "keyboard-toggle",
+        "tooltip": {
+            "en": "Toggle keyboard"
         },
         "type": "command"
     },
