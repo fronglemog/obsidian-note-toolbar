@@ -102,6 +102,11 @@ body {
     }
 
     /*
+     * Other styles not customizable via Style Settings
+     */
+    --cg-nt-settings-link-focus-box-shadow: 0 0 0 2px;
+
+    /*
      * Glass effect variables (thanks to @aaaaalexis)
      * Licensed under the MIT License; see the LICENSE file.
      */
@@ -116,39 +121,6 @@ body {
         --ntb-liquid-glass-background: rgba(255, 255, 255, 0.075);
         --ntb-shadow-base: inset 1px 1.5px 1px -1px rgba(255, 255, 255, 0.2), inset -1px -1.5px 1px -1px rgba(255, 255, 255, 0.15), inset 0 4px 16px rgba(255, 255, 255, 0.025);
         --ntb-shadow-xs: var(--ntb-shadow-base);
-    }
-
-    /*
-     * Default adjustments for various themes
-     */
-    &[data-ntb-csstheme="Baseline"] {
-        --cg-nt-tbar-top-sticky-pos-desktop: calc(var(--header-height) * -1 + 16px);
-        --cg-nt-tbar-top-sticky-pos-mobile: calc(1rem * -1 + 1px);
-    }
-    &[data-ntb-csstheme="Cupertino"] {
-        --cg-nt-tbar-top-sticky-pos-desktop: calc(var(--header-height) * -1 + 24px);
-        --ntb-anim-duration-moderate: var(--anim-duration-moderate);
-        /* --ntb-blur-s: var(--blur-s); */
-        --ntb-liquid-glass-background: var(--liquid-glass-background);
-        --ntb-shadow-base: var(--shadow-base);
-        --ntb-shadow-xs: var(--shadow-xs);
-    }
-    &[data-ntb-csstheme="Baseline"], &[data-ntb-csstheme="Cupertino"] {        
-        --cg-nt-fab-pos-x-mobile: var(--navbar-side-padding);
-        &.is-phone {
-            --cg-nt-fab-pos-y-mobile: calc(48px + var(--navbar-bottom-padding) + 1rem);
-            --cg-nt-tbar-bottom-pos-y-mobile: calc(48px + var(--navbar-bottom-padding) + 1rem);
-            --cg-nt-tbar-top-sticky-pos-mobile: calc(98px);
-        }
-        &.is-mobile.theme-dark {
-            --cg-nt-tbar-bg-color: unset !important;
-        }
-    }
-    &[data-ntb-csstheme="Minimal"] {
-        --cg-nt-tbar-top-sticky-pos-desktop: calc(var(--header-height) * -1 + 16px);
-    }
-    &[data-ntb-csstheme="Velocity"] {
-        --cg-nt-tbar-top-sticky-pos-desktop: calc(var(--header-height) * -1 + 22px);      
     }
 
     /* class is added in the Toggle Base toolbar command */
