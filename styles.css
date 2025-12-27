@@ -2117,10 +2117,11 @@ body:not(.is-mobile):not(.is-focused), .workspace-leaf:not(.mod-active) {
 body button.cg-note-toolbar-fab[data-fab-metadata*="glass"],
 body.is-mobile button.cg-note-toolbar-fab[data-fab-metadata*="mgls"] {
     background-color: var(--ntb-liquid-glass-background) !important;
+    background-image: unset !important;
     backdrop-filter: var(--ntb-blur-s) !important;
     border: var(--border-width) solid var(--background-modifier-border);
     box-shadow: var(--ntb-shadow-xs);
-    /* fix: ghosting effect with overlays when glass style is being used */
+    /* fix? ghosting effect with overlays when glass style is being used; happens on desktop */
     /* transition: var(--ntb-anim-duration-moderate); */
     & svg {
         color: var(--text-normal);
@@ -2132,6 +2133,7 @@ body.is-mobile button.cg-note-toolbar-fab[data-fab-metadata*="mgls"] {
     }
     .is-mobile & {
         &:is(:active, :hover, :focus-visible) {
+            background: unset !important;
             background-color: var(--ntb-liquid-glass-background) !important;
             color: var(--text-normal) !important;
         }
@@ -2283,12 +2285,7 @@ body.is-mobile button.cg-note-toolbar-fab[data-fab-metadata*="mgls"] {
  */
 .note-toolbar-setting-ui, .note-toolbar-setting-modal-container {
     & .setting-group {
-        .is-mobile & {
-            border: var(--border-width) solid var(--background-modifier-border);
-            border-radius: var(--radius-m);
-        }
         & .setting-items {
-            border-radius: var(--radius-m);
             &:focus-within {
                 box-shadow: inset 0 0 0 2px var(--background-modifier-border-focus);
             }
@@ -2314,6 +2311,17 @@ body.is-mobile button.cg-note-toolbar-fab[data-fab-metadata*="mgls"] {
         }
         &:hover {
             background-color: initial;
+        }
+    }
+}
+.note-toolbar-setting-modal-container {
+    .is-mobile & {
+        & .setting-group {
+            border-radius: var(--radius-m);
+            border: var(--border-width) solid var(--background-modifier-border);
+            & .setting-items {
+                border-radius: var(--radius-m);
+            }
         }
     }
 }
@@ -2361,6 +2369,11 @@ body.is-mobile button.cg-note-toolbar-fab[data-fab-metadata*="mgls"] {
     }
     & .setting-item {
         background-color: transparent !important;
+        border-radius: 0;
+        border-top: var(--border-width) solid var(--background-modifier-border);
+        &:first-child {
+            border-top: none;
+        }
         padding: 0.5em;
         margin: 0.25em;
         /* options button */
@@ -2697,7 +2710,10 @@ input[type="text"].note-toolbar-setting-error,
 }
 .note-toolbar-setting-folder-list-item-container {
     display: flex;
-    border-top: 1px solid var(--background-modifier-border);
+    border-top: var(--border-width) solid var(--background-modifier-border);
+    &:first-child {
+        border-top: none;
+    }
     padding: 8px 0;
     & .setting-item {
         align-items: center !important;
@@ -3344,7 +3360,7 @@ input[type="text"].note-toolbar-setting-error,
             & select.dropdown, 
             & select.dropdown:active,
             & select.dropdown:focus {
-                border-radius: 2em;
+                border-radius: var(--pill-radius);
                 font-size: var(--metadata-input-font-size);
             }
         }
@@ -4051,10 +4067,6 @@ input[type="text"].note-toolbar-setting-error,
     overflow-y: auto;
     & .cg-note-toolbar-container {
         margin: auto 0;
-        .is-phone & {
-            margin-top: unset;
-            padding-top: auto;
-        }
     }
     & .empty-state {
         display: none;
