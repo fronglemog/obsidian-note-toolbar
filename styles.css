@@ -1303,7 +1303,7 @@ body {
     --cg-nt-fab-pos-x-desktop: var(--size-4-8);
     --cg-nt-fab-pos-y-desktop: calc(var(--size-4-8) + 18px);
     --cg-nt-fab-pos-x-mobile: var(--size-4-3);
-    --cg-nt-fab-pos-y-mobile: calc(var(--safe-area-inset-bottom) - var(--keyboard-height) - 2px);
+    --cg-nt-fab-pos-y-mobile: calc(var(--safe-area-inset-bottom) - 2px);
     --cg-nt-fab-icon-color: var(--text-normal);
     --cg-nt-fab-icon-color-desktop: var(--icon-color);
     --cg-nt-fab-icon-size: 26px;
@@ -1555,7 +1555,7 @@ body {
             [data-tbar-position="bottom"] & {
                 margin: var(--cg-nt-tbar-margin-y);
             }
-            [data-tbar-position="text"] & {
+            [data-tbar-position="float"] & {
                 margin: var(--cg-nt-tbar-text-margin-y) var(--cg-nt-tbar-text-margin-x);
             }
         }
@@ -1721,7 +1721,7 @@ body {
             border: solid 1px var(--cg-nt-tbar-border-color);
             border-radius: var(--cg-nt-tbar-bottom-border-radius);
         }
-        [data-tbar-position="text"] & {
+        [data-tbar-position="float"] & {
             border: solid 1px var(--cg-nt-tbar-text-border-color);
             border-radius: var(--cg-nt-tbar-text-border-radius);
         }
@@ -1736,7 +1736,7 @@ body {
                 border: solid 1px var(--cg-nt-tbar-border-color);
                 border-radius: var(--cg-nt-tbar-bottom-border-radius);
             }
-            [data-tbar-position="text"] & {
+            [data-tbar-position="float"] & {
                 border: solid 1px var(--cg-nt-tbar-text-border-color);
                 border-radius: var(--cg-nt-tbar-text-border-radius);
             }
@@ -1860,7 +1860,7 @@ body {
         & a, span.external-link {
             background-color: var(--cg-nt-item-button-bg-color);
             box-shadow: var(--input-shadow);
-            [data-tbar-position="text"] & {
+            [data-tbar-position="float"] & {
                 background-color: var(--cg-nt-tbar-text-item-button-bg-color);
             }
         }
@@ -1872,7 +1872,7 @@ body {
             & a, span.external-link {
                 background-color: var(--cg-nt-item-button-bg-color);
                 box-shadow: var(--input-shadow);
-                [data-tbar-position="text"] & {
+                [data-tbar-position="float"] & {
                     background-color: var(--cg-nt-tbar-text-item-button-bg-color);
                 }
             }
@@ -2029,6 +2029,10 @@ body:not(.is-mobile):not(.is-focused), .workspace-leaf:not(.mod-active) {
             right: var(--cg-nt-fab-pos-x-mobile);
         }
     }
+    .is-phone.mod-toolbar-open & {
+        bottom: unset;
+        top: calc(100vh - var(--keyboard-height) - var(--mobile-toolbar-height) - var(--cg-nt-fab-icon-size) - var(--cg-nt-fab-padding) * 2 - 8px);
+    }
 }
 .is-phone {
     /* Navbar overrides to create space for the floating button. */
@@ -2039,11 +2043,11 @@ body:not(.is-mobile):not(.is-focused), .workspace-leaf:not(.mod-active) {
         margin-right: var(--size-4-3);
     }
     /* use animations consistent with Navbar */
-    & .cg-note-toolbar-container[data-tbar-position="fabr"], & .cg-note-toolbar-container[data-tbar-position="fabl"] {
+    & .cg-note-toolbar-container[data-tbar-position*="fab"] {
         transition: margin-bottom 0.3s ease-in-out, opacity 0.3s ease-in-out, transform 0.2s ease-out;
     }
     &.is-hidden-nav {
-        & .cg-note-toolbar-container[data-tbar-position="fabr"], & .cg-note-toolbar-container[data-tbar-position="fabl"] {
+        & .cg-note-toolbar-container[data-tbar-position*="fab"] {
             transition: margin-bottom 0.3s ease-in-out, opacity 0.3s ease-in-out, transform 0.2s ease-out;
             transform: translateY(calc(var(--navbar-height) + var(--safe-area-inset-bottom)));
             opacity: 0;
@@ -2194,7 +2198,12 @@ body.is-mobile button.cg-note-toolbar-fab[data-fab-metadata*="mgls"] {
         }
         & .cg-note-toolbar-callout {
             .is-phone & {
-                padding-bottom: var(--cg-nt-tbar-bottom-padding-bottom-phone);
+                padding-bottom: calc(var(--navbar-height) + var(--cg-nt-tbar-bottom-padding-bottom-phone));
+                /* use animation consistent with Navbar */
+                transition: padding-bottom 0.3s ease-in-out, opacity 0.3s ease-in-out, transform 0.2s ease-out;
+                .is-hidden-nav & {
+                    padding-bottom: var(--cg-nt-tbar-bottom-padding-bottom-phone);
+                }
             }
             /* fix: bottom padding needs to be removed when keyboard is open on phone */
             .is-phone.mod-toolbar-open & {
@@ -2203,7 +2212,7 @@ body.is-mobile button.cg-note-toolbar-fab[data-fab-metadata*="mgls"] {
         }
     }
 
-    &[data-tbar-position="text"] {
+    &[data-tbar-position="float"] {
         border-radius: var(--cg-nt-tbar-text-border-radius);
         box-shadow: var(--cg-nt-tbar-text-shadow);
         position: absolute;
@@ -3400,6 +3409,11 @@ input[type="text"].note-toolbar-setting-error,
 }
 .note-toolbar-setting-mini-dialog {
     width: calc(var(--dialog-width) / 1.5);
+}
+.note-toolbar-setting-position-group {
+    & .setting-item:has(+ .setting-item[data-active="false"]) {
+        padding-bottom: 0;
+    }
 }
 .note-toolbar-setting-small-heading {
     color: var(--color-base-50);
