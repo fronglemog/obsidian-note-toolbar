@@ -104,7 +104,9 @@ export const enum PositionType {
 	FabRight = 'fabr',
 	Floating = 'float',
 	Hidden = 'hidden',
+	Menu = 'menu',
 	Props = 'props',
+	QuickTools = 'quicktools',
 	TabBar = 'tabbar',
 	Top = 'top'
 }
@@ -299,6 +301,7 @@ export interface ExportSettings {
 
 export interface ToolbarSettings {
 	uuid: string;
+	commandPosition: PositionType;
 	customClasses: string;
 	defaultItem: string | null;
 	defaultStyles: string[];
@@ -316,6 +319,7 @@ export interface ToolbarSettings {
 
 export const DEFAULT_TOOLBAR_SETTINGS: ToolbarSettings = {
 	uuid: getUUID(),
+	commandPosition: PositionType.Floating,
 	customClasses: "",
 	defaultItem: null,
 	defaultStyles: [DefaultStyleType.Border, DefaultStyleType.Even, DefaultStyleType.Sticky],
@@ -333,6 +337,7 @@ export const DEFAULT_TOOLBAR_SETTINGS: ToolbarSettings = {
 
 export const EMPTY_TOOLBAR: ToolbarSettings = {
 	uuid: EMPTY_TOOLBAR_ID,
+	commandPosition: PositionType.Floating,
 	customClasses: '',
 	defaultItem: null,
 	defaultStyles: [],
@@ -586,6 +591,12 @@ export const TARGET_OPTIONS = {
 	'tab': t('setting.item.option-target-tab'),
 	'window': t('setting.item.option-target-window'),
 	'split': t('setting.item.option-target-split')
+}
+
+export const TOOLBAR_COMMAND_POSITION_OPTIONS = {
+	[PositionType.Floating]: t('setting.position.option-floating'),
+	[PositionType.Menu]: t('setting.position.option-menu'),
+	[PositionType.QuickTools]: t('setting.position.option-quicktools')
 }
 
 /**

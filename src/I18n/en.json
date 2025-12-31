@@ -532,10 +532,13 @@
             "option-menu": "Menu"
         },
         "open-command": {
-            "description": "Add a command that opens this toolbar in a Quick Tools window.",
+            "description": "Add a command that opens this toolbar.",
             "name": "Add toolbar command",
             "notice-command-added": "Command now available:\n{{command}}",
-            "notice-command-removed": "Command removed:\n{{command}}"
+            "notice-command-removed": "Command removed:\n{{command}}",
+            "option-hotkey-description": "Open Obsidian's hotkey settings.",
+            "option-position": "Where to open toolbar",
+            "option-position-description": "By default the toolbar opens as a floating toolbar at the cursor position."
         },
         "option-platform-desktop": "Desktop",
         "option-platform-mobile": "Mobile",
@@ -563,7 +566,7 @@
             },
             "name": "Other",
             "navbar-visibility": {
-                "description": "Hides actions in Obsidian's mobile navigation bar.",
+                "description": "Hides actions in Obsidian's phone navigation bar.",
                 "name": "Navbar item visibility 📱"
             },
             "scripting": {
@@ -588,10 +591,13 @@
             "option-fab-desktop-native-menus-disclaimer": "Disable Obsidian's Appearance → Native menus option, if you want icons to appear floating button menus.",
             "option-fabl": "Floating button: left",
             "option-fabr": "Floating button: right",
+            "option-floating": "Floating toolbar",
             "option-hidden": "Hidden (do not display)",
             "option-hidden-mobile": "Hidden / Navigation bar",
+            "option-menu": "Menu",
             "option-mobile-help": "Tip: Access toolbars from the navigation bar.",
             "option-props": "Below Properties",
+            "option-quicktools": "Quick Tools window",
             "option-tabbar": "Tab bar",
             "option-top": "Top (fixed)"
         },
@@ -627,7 +633,7 @@
             "option-autohide-disclaimer": "Auto-hide does not apply on mobile.",
             "option-between": "space between items",
             "option-border": "border",
-            "option-button": "button items",
+            "option-button": "buttons",
             "option-center": "center items",
             "option-custom-description": "List of classes defined in CSS snippets to apply to this toolbar, separated by spaces.",
             "option-custom-empty": "CSS classes",
@@ -705,7 +711,7 @@
             "notice-command-removed": "Command removed:\n{{command}}",
             "notice-command-removed_empty": "Command removed for item",
             "notice-command-updated": "Command updated:\n{{command}}",
-            "tooltip-command-indicator": "Use with command:\n{{command}}"
+            "tooltip-command-indicator": "Open with command:\n{{command}}"
         },
         "whats-new": {
             "button-read": "Read ↗",

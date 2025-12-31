@@ -54,16 +54,28 @@
         }
         & .cg-note-toolbar-callout {
             .is-phone & {
-                padding-bottom: calc(var(--navbar-height) + var(--cg-nt-tbar-bottom-padding-bottom-phone));
+                margin-bottom: calc(var(--navbar-height) + var(--cg-nt-tbar-bottom-margin-bottom-phone));
                 /* use animation consistent with Navbar */
-                transition: padding-bottom 0.3s ease-in-out, opacity 0.3s ease-in-out, transform 0.2s ease-out;
+                transition: margin-bottom 0.3s ease-in-out, opacity 0.3s ease-in-out, transform 0.2s ease-out;
                 .is-hidden-nav & {
-                    padding-bottom: var(--cg-nt-tbar-bottom-padding-bottom-phone);
+                    margin-bottom: var(--cg-nt-tbar-bottom-margin-bottom-phone);
                 }
             }
-            /* fix: bottom padding needs to be removed when keyboard is open on phone */
+            /* fix: bottom margin needs to be removed when keyboard is open on phone */
             .is-phone.mod-toolbar-open & {
-                padding-bottom: unset;
+                margin-bottom: unset;
+            }
+        }
+
+        /* remove the background color for toolbars using the button style */
+        & .cg-note-toolbar-callout[data-callout-metadata*="button"],
+        & .cg-note-toolbar-callout[data-callout-metadata*="mbtn"] {
+            background-color: unset !important;
+            @media (hover: hover) {
+                & a:hover, span.external-link:hover {
+                    background-color: var(--interactive-hover);
+                    opacity: 1;
+                }
             }
         }
     }
@@ -98,6 +110,20 @@
                     opacity: var(--icon-opacity-hover);
                     background-color: var(--cg-nt-tbar-text-item-bg-color-hover);
                     color: var(--cg-nt-tbar-text-item-text-color-hover);
+                }
+            }
+        }
+    }
+
+    &[data-tbar-position="props"] {
+        /* remove the background color for toolbars using the button style */
+        & .cg-note-toolbar-callout[data-callout-metadata*="button"],
+        & .cg-note-toolbar-callout[data-callout-metadata*="mbtn"] {
+            background-color: unset !important;
+            @media (hover: hover) {
+                & a:hover, span.external-link:hover {
+                    background-color: var(--interactive-hover);
+                    opacity: 1;
                 }
             }
         }
