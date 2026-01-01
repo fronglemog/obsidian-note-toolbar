@@ -106,7 +106,7 @@ export default class PluginUtils {
 	 */
 	getCursorPosition(): Rect | undefined {
 		const editor = this.ntb.app.workspace.activeEditor?.editor;
-		if (!editor || !editor.hasFocus()) return;
+		if (!editor) return;
 		const offset = editor.posToOffset(editor.getCursor());
 		const cmView = (editor as any).cm as EditorView;
 		const coords = cmView.coordsAtPos(offset);
@@ -130,6 +130,32 @@ export default class PluginUtils {
 				item.linkAttr.type === ItemType.Command && !(item.linkAttr.commandId in this.ntb.app.commands.commands)
 			)
 			.map(item => item.linkAttr.commandId.split(':')[0].trim());
+	}
+
+	/**
+	 * Get the position for displaying UI elements.
+	 * @param position The type of position to retrieve. Defaults to `pointer`.
+     * `cursor`: editor cursor position (falls back to pointer, e.g., if editor is not in focus);
+	 * `pointer`: mouse/pointer position;
+	 * `toolbar`: last clicked toolbar element position (falls back to pointer)
+	 * @returns A Rect object with the position coordinates, or undefined if unable to determine
+	 */
+	getPosition(position: 'cursor' | 'pointer' | 'toolbar' = 'pointer'): Rect | undefined {
+		// 'pointer' position
+		const pointerPos: Rect = { 
+			left: this.ntb.render.pointerX, right: this.ntb.render.pointerX,
+			top: this.ntb.render.pointerY, bottom: this.ntb.render.pointerY 
+		};
+		if (position === 'pointer') return pointerPos;
+
+		// 'cursor' position, with fallback to 'pointer' (Reading mode, editor not in focus, etc.)
+		if (position === 'cursor') return this.getCursorPosition() ?? pointerPos;
+
+		// 'toolbar' position (i.e., last clicked element), with fallback to 'pointer'
+		const lastClickedPos = this.ntb.items.lastClickedEl?.getBoundingClientRect();
+		return lastClickedPos
+			? {	left: lastClickedPos.x, right: lastClickedPos.x, top: lastClickedPos.bottom, bottom: lastClickedPos.bottom }
+			: pointerPos;
 	}
 
 	/**

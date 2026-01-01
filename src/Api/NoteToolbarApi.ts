@@ -4,7 +4,7 @@ import * as Obsidian from "obsidian";
 import { App, Menu, MenuItem, Modal, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
 import { LocalVar, t } from "Settings/NoteToolbarSettings";
 import { putFocusInMenu } from "Utils/Utils";
-import INoteToolbarApi, { NtbFileSuggesterOptions, NtbMenuItem, NtbMenuOptions, NtbModalOptions, NtbPromptOptions, NtbSuggesterOptions } from "./INoteToolbarApi";
+import INoteToolbarApi, { NtbFileSuggesterOptions, NtbMenuItem, NtbMenuOptions, NtbModalOptions, NtbPromptOptions, NtbSuggesterOptions, NtbToolbarOptions } from "./INoteToolbarApi";
 import Item from "./Item";
 import NtbModal from "./NtbModal";
 import NtbPrompt from "./NtbPrompt";
@@ -178,7 +178,13 @@ export default class NoteToolbarApi<T> implements INoteToolbarApi<T> {
         if (typeof toolbarOrItems === 'string') {
             const toolbar = this.ntb.settingsManager.getToolbar(toolbarOrItems);
             const activeFile = this.ntb.app.workspace.getActiveFile();
-            if (toolbar) menu = await this.ntb.render.renderAsMenu(toolbar, activeFile);
+            if (toolbar) {
+                menu = await this.ntb.render.renderAsMenu(toolbar, activeFile);
+            }
+            else {
+                new Notice(t('api.msg.toolbar-not-found', {toolbar: toolbarOrItems}));
+                return;
+            }
         }
         else {
             toolbarOrItems.map((item: NtbMenuItem) => {
@@ -220,12 +226,8 @@ export default class NoteToolbarApi<T> implements INoteToolbarApi<T> {
 
         // show at text cursor, with a fallback to the mouse position
         if (options?.position === 'cursor') {
-            const cursorPosition = this.ntb.utils.getCursorPosition();
-            const showAtPosition = cursorPosition 
-                ? cursorPosition 
-                : { left: this.ntb.render.mouseX, right: this.ntb.render.mouseX,
-                    top: this.ntb.render.mouseY, bottom: this.ntb.render.mouseY };
-            menu.showAtPosition({x: showAtPosition.left, y: showAtPosition.top});
+            const position = this.ntb.utils.getPosition('cursor');
+            if (position) menu.showAtPosition({x: position.left, y: position.top});
         }
         // default position is 'toolbar'
         else {
@@ -349,5 +351,31 @@ export default class NoteToolbarApi<T> implements INoteToolbarApi<T> {
      * @see INoteToolbarApi.t
      */
     t: string = t;
+
+    /**
+     * Shows a toolbar by its name or ID.
+     * 
+     * @see INoteToolbarApi.toolbar
+     */
+    async toolbar(toolbarNameOrId: string, options?: NtbToolbarOptions): Promise<void> {
+
+        const toolbar = this.ntb.settingsManager.getToolbar(toolbarNameOrId);
+        if (!toolbar) {
+            new Notice(t('api.msg.toolbar-not-found', {toolbar: toolbarNameOrId}));
+            return;
+        }
+
+        // position option; defaults to 'toolbar' as scripts are typically executed from clicked items
+        const showAtPosition = this.ntb.utils.getPosition(options?.position ?? 'toolbar');
+
+        await this.ntb.render.renderFloatingToolbar(toolbar, showAtPosition, showAtPosition);
+
+        // apply custom classes
+        if (options?.class) this.ntb.render.floatingToolbarEl?.addClasses([...options.class.split(' ')]);
+
+        // focus is required, or the toolbar doesn't stay up
+        await this.ntb.commands.focus(true);
+
+    }
 
 }
