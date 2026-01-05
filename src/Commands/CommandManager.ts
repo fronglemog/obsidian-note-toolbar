@@ -185,7 +185,7 @@ export default class CommandManager {
                             case PositionType.Floating:
                             default: {
                                 if (!showAtPosition) break;
-                                await this.ntb.render.renderFloatingToolbar(toolbar, showAtPosition, showAtPosition);
+                                await this.ntb.render.renderFloatingToolbar(toolbar, showAtPosition);
                                 await this.focus(true);
                                 break;
                             }
@@ -213,12 +213,13 @@ export default class CommandManager {
             // FIXME? remove this check because of Reading/Preview mode?
             const editor = this.ntb.app.workspace.activeEditor?.editor;
             if (!editor) {
+                this.ntb.debug('editor not available - exiting');
                 this.ntb.debugGroupEnd();
                 return;
             };
             const toolbar = this.ntb.settingsManager.getToolbarById(this.ntb.settings.textToolbar);
             const showAtPosition = this.ntb.utils.getPosition('cursor');
-            await this.ntb.render.renderFloatingToolbar(toolbar, showAtPosition, showAtPosition);
+            await this.ntb.render.renderFloatingToolbar(toolbar, showAtPosition);
         }
 
         // need to get the type of toolbar first

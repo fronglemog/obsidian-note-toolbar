@@ -8,15 +8,20 @@ import GalleryView from 'Gallery/GalleryView';
 import HelpView from 'Help/HelpView';
 import TipView from 'Help/TipView';
 import WhatsNewView from 'Help/WhatsNewView';
+import CalloutListeners from 'Listeners/CalloutListeners';
+import DocumentListeners from 'Listeners/DocumentListeners';
+import MetadataListeners from 'Listeners/MetadataListeners';
+import VaultListeners from 'Listeners/VaultListeners';
+import WorkspaceListeners from 'Listeners/WorkspaceListeners';
 import { addIcon, Platform, Plugin, WorkspaceLeaf } from 'obsidian';
 import ProtocolManager from 'Protocol/ProtocolManager';
 import { NoteToolbarSettings, t, VIEW_TYPE_GALLERY, VIEW_TYPE_HELP, VIEW_TYPE_TIP, VIEW_TYPE_WHATS_NEW } from 'Settings/NoteToolbarSettings';
 import SettingsManager from 'Settings/SettingsManager';
 import NoteToolbarSettingTab from 'Settings/UI/NoteToolbarSettingTab';
-import ChangeListener from 'Toolbar/ChangeListener';
+import CalloutHandler from 'Toolbar/CalloutHandler';
 import TextToolbar, { TextToolbarClass } from 'Toolbar/TextToolbar';
 import ToolbarElementHelper from 'Toolbar/ToolbarElementHelper';
-import ToolbarEventHandler from 'Toolbar/ToolbarEventHandler';
+import ToolbarHandler from 'Toolbar/ToolbarHandler';
 import ToolbarItemHandler from 'Toolbar/ToolbarItemHandler';
 import ToolbarRenderer from 'Toolbar/ToolbarRenderer';
 import VariableResolver from 'Toolbar/VariableResolver';
@@ -35,14 +40,26 @@ export default class NoteToolbarPlugin extends Plugin {
 	settingsManager: SettingsManager;
 	utils: PluginUtils;
 	
+	callouts: CalloutHandler;
 	el: ToolbarElementHelper;
-	events: ToolbarEventHandler;
 	items: ToolbarItemHandler;
-	listeners: ChangeListener;
 	render: ToolbarRenderer;
+	toolbars: ToolbarHandler;
 	vars: VariableResolver;
 
+	listeners: {
+		callout: CalloutListeners;
+		document: DocumentListeners;
+		metadata: MetadataListeners;
+		vault: VaultListeners;
+		workspace: WorkspaceListeners;
+	};
+
 	textToolbar: ViewPlugin<TextToolbarClass> | null = null;
+
+	debug!: (...args: any[]) => void;
+	debugGroup!: (...args: any[]) => void;
+	debugGroupEnd!: (...args: any[]) => void;
 
 	/**
 	 * When this plugin is loaded (e.g., on Obsidian startup, or plugin is enabled in settings):
@@ -53,13 +70,22 @@ export default class NoteToolbarPlugin extends Plugin {
 		this.adapters = new AdapterManager(this);
 
 		// initialize managers + helpers
+		this.callouts = new CalloutHandler(this);
 		this.el = new ToolbarElementHelper(this);
-		this.events = new ToolbarEventHandler(this);
 		this.items = new ToolbarItemHandler(this);
-		this.listeners = new ChangeListener(this);
 		this.render = new ToolbarRenderer(this);
+		this.toolbars = new ToolbarHandler(this);
 		this.utils = new PluginUtils(this);
 		this.vars = new VariableResolver(this);
+
+		// listeners
+		this.listeners = {
+			callout: new CalloutListeners(this),
+			document: new DocumentListeners(this),
+			metadata: new MetadataListeners(this),
+			vault: new VaultListeners(this),
+			workspace: new WorkspaceListeners(this),
+		}
 
 		// load the settings
 		this.settingsManager = new SettingsManager(this);
@@ -67,7 +93,7 @@ export default class NoteToolbarPlugin extends Plugin {
 
 		// add the ribbon icon, on phone only (seems redundant to add on desktop + tablet)
 		if (Platform.isPhone) {
-			this.addRibbonIcon(this.settings.icon, t('plugin.note-toolbar'), (event) => this.events.ribbonMenuHandler(event));
+			this.addRibbonIcon(this.settings.icon, t('plugin.note-toolbar'), (event: MouseEvent) => this.listeners.workspace.onRibbonMenu(event));
 		}
 
 		this.api = new NoteToolbarApi(this);
@@ -88,7 +114,7 @@ export default class NoteToolbarPlugin extends Plugin {
 			// has to be done on plugin load
 			// @ts-expect-error - internalPlugins is not in the public App type
 			const internalPlugins = this.app.internalPlugins;
-			this.listeners.workspacesPlugin = internalPlugins.getPluginById('workspaces');
+			this.listeners.workspace.workspacesPlugin = internalPlugins.getPluginById('workspaces');
 
 			// add icons specific to the plugin
 			addIcon('note-toolbar-empty', '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" class="svg-icon note-toolbar-empty”></svg>');
@@ -101,38 +127,12 @@ export default class NoteToolbarPlugin extends Plugin {
 			// add the settings UI
 			this.addSettingTab(new NoteToolbarSettingTab(this));
 
-			this.registerEvent(this.app.workspace.on('file-open', this.listeners.onFileOpen));
-			this.registerEvent(this.app.workspace.on('active-leaf-change', this.listeners.onLeafChange));
-			this.registerEvent(this.app.metadataCache.on('changed', this.listeners.onMetadataChange));
-			this.registerEvent(this.app.workspace.on('layout-change', this.listeners.onLayoutChange));
-			this.registerEvent(this.app.workspace.on('css-change', this.listeners.onCssChange));
-
-			// monitor files being renamed to update menu items
-			this.registerEvent(this.app.vault.on('rename', this.listeners.onFileRename));
-
-			// Note Toolbar Callout click handlers
-			this.registerEvent(this.app.workspace.on('window-open', (win) => {
-				this.registerDomEvent(win.doc, 'click', (e: MouseEvent) => {
-					this.items.calloutLinkHandler(e);
-				});
-			}));
-			this.registerDomEvent(activeDocument, 'click', (e: MouseEvent) => {
-				const target = e.target as HTMLElement;
-				if (!target.matches('.cg-note-toolbar-container')) {
-					this.render.removeFocusStyle();
-				}
-				this.items.calloutLinkHandler(e);
-			});
-			
-			// track mouse position for Editor menu toolbar placement
-			this.registerDomEvent(activeDocument, 'mousemove', (e: MouseEvent) => {
-				this.render.pointerX = e.clientX;
-				this.render.pointerY = e.clientY;
-			});
-
-			// add items to menus, when needed
-			this.registerEvent(this.app.workspace.on('file-menu', this.events.fileMenuHandler));
-			this.registerEvent(this.app.workspace.on('editor-menu', this.events.editorMenuHandler));
+			// setup listeners
+			this.listeners.workspace.register();
+			this.listeners.callout.register();
+			this.listeners.metadata.register();
+			this.listeners.vault.register();
+			this.listeners.document.register();	
 
 			// add commands
 			this.commands.addCommands();
@@ -182,24 +182,22 @@ export default class NoteToolbarPlugin extends Plugin {
     // #region DEBUGGING
     // *****************************************************************************
 
-    /**
-     * Utility for debug logging.
-     * @param message Message to output to console for debugging.
-     */
-    debug(message?: any, ...optionalParams: any[]): void {
-        this.settings.debugEnabled && console.debug(message, ...optionalParams);
-        // const stack = new Error().stack;
-        // this.settings.debugEnabled && console.debug('Call stack:', stack);
-    }
-
-	debugGroup(label: string): void {
-		// eslint-disable-next-line
-		this.settings.debugEnabled && console.group(label);
-	}
-
-	debugGroupEnd(): void {
-		// eslint-disable-next-line
-		this.settings.debugEnabled && console.groupEnd();
+	/** 
+	 * Toggle debugging based on user setting.
+	 */
+	toggleDebugging() {
+		// setup debug functions, preserving line numbers
+		if (this.settings.debugEnabled) {
+			this.debug = console.debug.bind(console);
+			this.debugGroup = console.group.bind(console);
+			this.debugGroupEnd = console.groupEnd.bind(console);
+		}
+		// otherwise do nothing when debug functions are called
+		else {
+			this.debug = (...args: any[]) => {};
+			this.debugGroup = (...args: any[]) => {};
+			this.debugGroupEnd = (...args: any[]) => {};
+		}
 	}
 
 	// #endregion

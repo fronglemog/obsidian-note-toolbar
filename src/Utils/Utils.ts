@@ -58,6 +58,7 @@ export default class PluginUtils {
 			'home-tab-view': (this.ntb.settings.emptyViewToolbar !== undefined),
 			'image': this.ntb.settings.showToolbarIn.image,
 			'kanban': this.ntb.settings.showToolbarIn.kanban,
+			'markdown': true,
 			'pdf': this.ntb.settings.showToolbarIn.pdf,
 			'video': this.ntb.settings.showToolbarIn.video,
 		};
@@ -105,18 +106,63 @@ export default class PluginUtils {
 	 * @returns cursor position, or `undefined` if we're not showing an editor, or it does not have focus.
 	 */
 	getCursorPosition(): Rect | undefined {
+
 		const editor = this.ntb.app.workspace.activeEditor?.editor;
+		let result: Rect;
+
+		// TODO: support other file types here?
 		if (!editor) return;
-		const offset = editor.posToOffset(editor.getCursor());
+
 		const cmView = (editor as any).cm as EditorView;
-		const coords = cmView.coordsAtPos(offset);
-		if (!coords) return;
-		return {
-			top: coords.top,
-			bottom: coords.bottom,
-			left: coords.left,
-			right: coords.right
+		const cursorOffset = editor.posToOffset(editor.getCursor());
+		const cursorCoords = cmView.coordsAtPos(cursorOffset);
+
+		if (!cursorCoords) return;
+
+		result = {
+			top: cursorCoords.top,
+			bottom: cursorCoords.bottom,
+			left: cursorCoords.left,
+			right: cursorCoords.right
 		};
+
+		// if there's an editor selection, return the bounding box of the selection
+		const selection = editor.getSelection();
+		if (selection) {
+			const selectionRange = editor.listSelections()[0];
+			const fromOffset = editor.posToOffset(selectionRange.anchor);
+			const toOffset = editor.posToOffset(selectionRange.head);
+			
+			const startCoords = cmView.coordsAtPos(fromOffset);
+			const endCoords = cmView.coordsAtPos(toOffset);
+			
+			if (startCoords && endCoords) {
+				result = {
+					top: Math.min(startCoords.top, endCoords.top),
+					bottom: Math.max(endCoords.top, endCoords.bottom),
+					left: Math.min(startCoords.left, endCoords.left),
+					right: Math.max(startCoords.right, endCoords.right)
+				}
+			}
+		}
+
+		// fallback for Reading mode (and other views?)
+		if (!selection) {
+			const documentSelection = activeDocument.getSelection();
+			if (documentSelection && documentSelection.rangeCount > 0 && !documentSelection.isCollapsed) {
+				const range = documentSelection.getRangeAt(0);
+				const rect = range.getBoundingClientRect();
+				this.ntb.debug(rect);
+				result = {
+					top: rect.top,
+					bottom: rect.bottom,
+					left: rect.left,
+					right: rect.right
+				};
+			}			
+		}
+
+		return result;
 	}
 
 	/**
@@ -135,21 +181,25 @@ export default class PluginUtils {
 	/**
 	 * Get the position for displaying UI elements.
 	 * @param position The type of position to retrieve. Defaults to `pointer`.
-     * `cursor`: editor cursor position (falls back to pointer, e.g., if editor is not in focus);
+     * `cursor`: editor cursor or selection position (falls back to pointer position, e.g., if editor is not in focus);
 	 * `pointer`: mouse/pointer position;
-	 * `toolbar`: last clicked toolbar element position (falls back to pointer)
+	 * `toolbar`: last clicked toolbar element position (falls back to pointer position)
 	 * @returns A Rect object with the position coordinates, or undefined if unable to determine
 	 */
 	getPosition(position: 'cursor' | 'pointer' | 'toolbar' = 'pointer'): Rect | undefined {
 		// 'pointer' position
 		const pointerPos: Rect = { 
-			left: this.ntb.render.pointerX, right: this.ntb.render.pointerX,
-			top: this.ntb.render.pointerY, bottom: this.ntb.render.pointerY 
+			left: this.ntb.listeners.document.pointerX, right: this.ntb.listeners.document.pointerX,
+			top: this.ntb.listeners.document.pointerY, bottom: this.ntb.listeners.document.pointerY 
 		};
 		if (position === 'pointer') return pointerPos;
 
 		// 'cursor' position, with fallback to 'pointer' (Reading mode, editor not in focus, etc.)
-		if (position === 'cursor') return this.getCursorPosition() ?? pointerPos;
+		if (position === 'cursor') {
+			const cursorPos = this.getCursorPosition();
+			if (!position) this.ntb.debug('getPosition: cursor not found, falling back to pointer position');
+			return cursorPos ?? pointerPos;
+		};
 
 		// 'toolbar' position (i.e., last clicked element), with fallback to 'pointer'
 		const lastClickedPos = this.ntb.items.lastClickedEl?.getBoundingClientRect();

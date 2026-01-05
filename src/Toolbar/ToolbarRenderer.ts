@@ -1,9 +1,9 @@
 import { Rect } from "@codemirror/view";
 import NoteToolbarPlugin from "main";
-import { MarkdownView, ItemView, TFile, Platform, setIcon, setTooltip, FrontMatterCache, getIcon, Menu, MenuItem, MenuPositionDef, TFolder, Notice } from "obsidian";
-import { ToolbarSettings, DefaultStyleType, MobileStyleType, PositionType, ItemType, LocalVar, ToggleUiStateType, t, ToolbarStyle, OBSIDIAN_UI_ELEMENTS } from "Settings/NoteToolbarSettings";
+import { FrontMatterCache, getIcon, ItemView, MarkdownView, Menu, MenuItem, MenuPositionDef, Notice, Platform, setIcon, setTooltip, TFile, TFolder } from "obsidian";
+import { DefaultStyleType, ItemType, LocalVar, MobileStyleType, OBSIDIAN_UI_ELEMENTS, PositionType, t, ToggleUiStateType, ToolbarSettings, ToolbarStyle } from "Settings/NoteToolbarSettings";
 import ToolbarSettingsModal from "Settings/UI/Modals/ToolbarSettingsModal";
-import { hasStyle, putFocusInMenu, getViewId, isValidUri, calcComponentVisToggles, calcItemVisToggles } from "Utils/Utils";
+import { calcComponentVisToggles, calcItemVisToggles, getViewId, hasStyle, isValidUri, putFocusInMenu } from "Utils/Utils";
 
 // note: make sure CSS is updated if these are changed
 export enum TbarData {
@@ -19,10 +19,6 @@ export enum TbarData {
  * Provides toolbar rendering, update, and cleanup functions.
  */
 export default class ToolbarRenderer {
-
-	// for tracking current pointer position, for placing UI
-	pointerX: number = 0;
-	pointerY: number = 0;
 
 	// floating toolbar element, of which there can be only one
     floatingToolbarEl: HTMLDivElement | null = null;
@@ -172,7 +168,7 @@ export default class ToolbarRenderer {
             case PositionType.FabRight: {
                 noteToolbarElement = await this.renderAsFab(toolbar, position);
                 embedBlock.append(noteToolbarElement);
-                this.ntb.registerDomEvent(embedBlock, 'click', (e) => this.ntb.events.fabHandler(e, noteToolbarElement!));
+                this.ntb.registerDomEvent(embedBlock, 'click', (e) => this.ntb.toolbars.onClickFab(e, noteToolbarElement!));
                 // render toolbar in context menu if a default item is set
                 if (toolbar.defaultItem) {
                     this.ntb.registerDomEvent(noteToolbarElement, 'contextmenu', (event) => {
@@ -184,7 +180,7 @@ export default class ToolbarRenderer {
                     });
                 }
                 else {
-                    this.ntb.registerDomEvent(noteToolbarElement, 'contextmenu', (e) => this.ntb.events.contextMenuHandler(e));
+                    this.ntb.registerDomEvent(noteToolbarElement, 'contextmenu', (e) => this.ntb.toolbars.onContextMenu(e));
                 }
                 break;
 			}
@@ -192,8 +188,8 @@ export default class ToolbarRenderer {
                 setIcon(embedBlock, this.ntb.settings.icon);
                 setTooltip(embedBlock, toolbar.name);
                 embedBlock.addClasses(['clickable-icon', 'view-action']);
-                this.ntb.registerDomEvent(embedBlock, 'click', (e) => this.ntb.events.fabHandler(e, noteToolbarElement!));
-                this.ntb.registerDomEvent(embedBlock, 'contextmenu', (e) => this.ntb.events.contextMenuHandler(e));
+                this.ntb.registerDomEvent(embedBlock, 'click', (e) => this.ntb.toolbars.onClickFab(e, noteToolbarElement!));
+                this.ntb.registerDomEvent(embedBlock, 'contextmenu', (e) => this.ntb.toolbars.onContextMenu(e));
                 break;
             }
             case PositionType.Bottom:
@@ -205,8 +201,8 @@ export default class ToolbarRenderer {
                 div.append(noteToolbarElement);
                 embedBlock.addClasses(['cm-embed-block', 'cm-callout', 'cg-note-toolbar-bar-container']);
                 embedBlock.append(div);
-                this.ntb.registerDomEvent(embedBlock, 'contextmenu', (e) => this.ntb.events.contextMenuHandler(e));
-                this.ntb.registerDomEvent(embedBlock, 'keydown', (e) => this.ntb.events.keyboardHandler(e));	
+                this.ntb.registerDomEvent(embedBlock, 'contextmenu', (e) => this.ntb.toolbars.onContextMenu(e));
+                this.ntb.registerDomEvent(embedBlock, 'keydown', (e) => this.ntb.toolbars.onKeyDown(e));	
                 break;
             }
             case PositionType.Hidden:
@@ -415,8 +411,8 @@ export default class ToolbarRenderer {
 						if (tooltipText) setTooltip(toolbarItem, tooltipText, { placement: "top" });
 					}
 
-					this.ntb.registerDomEvent(toolbarItem, 'click', (e) => this.ntb.events.clickHandler(e));
-					this.ntb.registerDomEvent(toolbarItem, 'auxclick', (e) => this.ntb.events.clickHandler(e));
+					this.ntb.registerDomEvent(toolbarItem, 'click', (e) => this.ntb.items.onItemClick(e));
+					this.ntb.registerDomEvent(toolbarItem, 'auxclick', (e) => this.ntb.items.onItemClick(e));
 		
 					const [dkHasIcon, dkHasLabel, mbHasIcon, mbHasLabel, tabHasIcon, tabHasLabel] = calcComponentVisToggles(item.visibility);
 					if (item.label) {
@@ -543,6 +539,9 @@ export default class ToolbarRenderer {
 		// add class so we can style the menu
 		menu.dom.addClass('note-toolbar-menu');
 
+		// add ID in case it's needed for styling
+		menu.dom.id = toolbar.uuid;
+
 		// apply custom classes to the sub-menu by getting the note's toolbar 
 		const activeToolbar = this.ntb.settingsManager.getCurrentToolbar();
 		if (activeToolbar && activeToolbar.customClasses) menu.dom.addClasses([...activeToolbar.customClasses.split(' ')]);
@@ -623,6 +622,7 @@ export default class ToolbarRenderer {
 								// render the sub-menu items
 								let menuToolbar = this.ntb.settingsManager.getToolbar(toolbarItem.link);
 								if (menuToolbar) {
+									subMenu.dom.id = menuToolbar.uuid; // add ID in case it's needed for styling
 									if (resolveVars) {
 										await this.renderMenuItems(subMenu, menuToolbar, file, recursions + 1, resolveVars);
 									}
@@ -645,7 +645,6 @@ export default class ToolbarRenderer {
 						if (!isCommandAvailable) break;
 
 						menu.addItem((item: MenuItem) => {
-
 							const itemTitleFr = document.createDocumentFragment();
 							itemTitleFr.append(title);
 							// show hotkey
@@ -656,7 +655,7 @@ export default class ToolbarRenderer {
 									if (itemHotkeyEl) itemTitleFr.appendChild(itemHotkeyEl);
 								}
 							}
-							
+							// create the item
 							item
 								.setIcon(toolbarItem.icon && getIcon(toolbarItem.icon)
 									? toolbarItem.icon 
@@ -670,7 +669,9 @@ export default class ToolbarRenderer {
 										this.ntb.app.workspace.activeEditor?.editor?.focus();
 									}
 								});
-							});
+							// set its ID, just for styling purposes
+							item.dom.id = toolbarItem.uuid;
+						});
 						break;
 					}
 				}
@@ -1057,46 +1058,45 @@ export default class ToolbarRenderer {
 	/**
 	 * Positions floating toolbars (e.g., text toolbar), ensuring it doesn't go over the edge of the window.
 	 * @param toolbarEl toolbar element to position.
-	 * @param startPos start of range to position toolbar at.
-	 * @param endPos end of range to position toolbar at.
-	 * @param position position the toolbar above or below the provided position.
+	 * @param position coords to position toolbar at.
+	 * @param orientation puts the toolbar above or below the provided position.
 	 */
 	positionFloating(
 		toolbarEl: HTMLDivElement | null, 
-		startPos: Rect, 
-		endPos: Rect, 
-		position: 'above' | 'below' = 'above'
+		position: Rect, 
+		orientation: 'above' | 'below' = 'above'
 	): void {
-
 		if (!toolbarEl) return;
 
-		const centerX = (startPos.left + endPos.right) / 2;
-		let left = centerX - (toolbarEl.offsetWidth / 2);
+		// vertically: orient relative to position, and prevent overflow
 		// TODO? make offset via CSS variable instead of subtracting here?
 		let top: number;
-
-		if (position === 'below') {
-			top = endPos.bottom + 8;
-			if (top + toolbarEl.offsetHeight > window.innerHeight - 8) {
-				top = startPos.top - toolbarEl.offsetHeight - 8;
+		if (orientation === 'below') {
+			top = position.bottom + 8;
+			if (top + toolbarEl.offsetHeight > activeWindow.innerHeight - 8) {
+				top = position.top - toolbarEl.offsetHeight - 8;
 				// if still overflows above, clamp to top
 				if (top < 8) top = 8;
 			}
 		}
 		else {
-			top = startPos.top - toolbarEl.offsetHeight - 8;
+			top = position.top - toolbarEl.offsetHeight - 8;
 			if (top < 8) {
-				top = endPos.bottom + 8;
+				top = position.bottom + 8;
 				// if still overflows below, clamp to bottom
-				if (top + toolbarEl.offsetHeight > window.innerHeight - 8) {
-					top = window.innerHeight - toolbarEl.offsetHeight - 8;
+				if (top + toolbarEl.offsetHeight > activeWindow.innerHeight - 8) {
+					top = activeWindow.innerHeight - toolbarEl.offsetHeight - 8;
 				}
 			}
 		}
 
-		// prevent horizontal overflow
+		// horizontally: use center of provided position (handles text selections)
+		const centerX = (position.left + position.right) / 2;
+		let left = centerX - (toolbarEl.offsetWidth / 2);
+
+		// ...and prevent horizontal overflow
 		const minLeft = 8;
-		const maxLeft = window.innerWidth - toolbarEl.offsetWidth - 8;
+		const maxLeft = activeWindow.innerWidth - toolbarEl.offsetWidth - 8;
 		left = Math.max(minLeft, Math.min(left, maxLeft));
 
 		toolbarEl.style.left = `${left}px`;
@@ -1113,17 +1113,15 @@ export default class ToolbarRenderer {
 	/**
 	 * Renders a floating toolbar at the middle of the given start and end positions in the editor. 
 	 * @param toolbar
-	 * @param selectStartPos 
-	 * @param selectEndPos 
+	 * @param position start position
 	 * @returns nothing
 	 */
 	async renderFloatingToolbar(
 		toolbar: ToolbarSettings | undefined, 
-		selectStartPos: Rect | undefined, 
-		selectEndPos: Rect | undefined
+		position: Rect | undefined
 	): Promise<void> {
 
-		if (!selectStartPos || !selectEndPos || !toolbar) return;
+		if (!position || !toolbar) return;
 
 		if (!toolbar) {
 			this.ntb.debug('⚠️ error: no floating toolbar provided');
@@ -1138,7 +1136,7 @@ export default class ToolbarRenderer {
 		// remove the existing toolbar because we're likely in a new position
 		if (this.floatingToolbarEl) {
 			this.ntb.debug('♻️ rendering floating toolbar (removing old toolbar)');
-			this.floatingToolbarEl.remove();
+			this.removeFloatingToolbar();
 		}
 
 		/*
@@ -1160,10 +1158,10 @@ export default class ToolbarRenderer {
 		toolbarContainerEl.appendChild(renderedToolbarEl);
 		activeDocument.body.appendChild(toolbarContainerEl);
 
-		this.positionFloating(toolbarContainerEl, selectStartPos, selectEndPos, Platform.isAndroidApp ? 'below' : 'above');
+		this.positionFloating(toolbarContainerEl, position, Platform.isAndroidApp ? 'below' : 'above');
 
-		this.ntb.registerDomEvent(toolbarContainerEl, 'contextmenu', (e) => this.ntb.events.contextMenuHandler(e));
-		this.ntb.registerDomEvent(toolbarContainerEl, 'keydown', (e) => this.ntb.events.keyboardHandler(e, true));
+		this.ntb.registerDomEvent(toolbarContainerEl, 'contextmenu', (e) => this.ntb.toolbars.onContextMenu(e));
+		this.ntb.registerDomEvent(toolbarContainerEl, 'keydown', (e) => this.ntb.toolbars.onKeyDown(e, true));
 
 		this.floatingToolbarEl = toolbarContainerEl;
 

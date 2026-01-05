@@ -22,52 +22,14 @@ export default function TextToolbar(ntb: NoteToolbarPlugin): ViewPlugin<TextTool
 }
 
 export class TextToolbarClass implements PluginValue {
-    private isContextOpening: boolean = false;
-    private isMouseDown: boolean = false;
-    private isMouseSelection: boolean = false;
 
     private lastSelection: { from: number; to: number; text: string } | null = null;
     private selection: { from: number; to: number; text: string } | null = null;
 
-    constructor(view: EditorView, private ntb: NoteToolbarPlugin) {
-        // plugin.debug('TextToolbarView initialized');
-
-        ntb.registerDomEvent(view.dom, 'mousedown', () => {
-            this.isMouseDown = true;
-        });
-        ntb.registerDomEvent(view.dom, 'mousemove', () => {
-            if (this.isMouseDown) {
-                this.isMouseSelection = true;
-            }
-        });
-        ntb.registerDomEvent(view.dom, 'mouseup', () => {
-            this.isMouseDown = false;
-        });
-        // also listen to mouseup on the document to catch releases outside the editor
-        ntb.registerDomEvent(activeDocument, 'mouseup', () => {
-            this.isMouseDown = false;
-        });
-        ntb.registerDomEvent(view.dom, 'keydown', () => {
-            this.isMouseSelection = false;
-            this.isMouseDown = false;
-        });
-        ntb.registerDomEvent(view.dom, 'dblclick', () => {
-            this.isMouseSelection = true;
-        });
-        ntb.registerDomEvent(view.scrollDOM, 'scroll', () => {
-            if (ntb.render.hasFloatingToolbar()) {
-                if (!this.selection) return;
-                const selectStartPos: Rect | null = view.coordsAtPos(this.selection.from);
-                const selectEndPos: Rect | null = view.coordsAtPos(this.selection.to);
-                if (!selectStartPos || !selectEndPos) return;
-                ntb.render.positionFloating(ntb.render.floatingToolbarEl, selectStartPos, selectEndPos, Platform.isAndroidApp ? 'below' : 'above');
-            }
-        });
-        ntb.registerDomEvent(view.dom, 'contextmenu', () => {
-            this.isContextOpening = true;
-        });
-
-    }
+    constructor(
+        view: EditorView, 
+        private ntb: NoteToolbarPlugin
+    ) {}
 
     update(update: ViewUpdate) {
 
@@ -79,8 +41,8 @@ export class TextToolbarClass implements PluginValue {
         };
         
         // don't show toolbar until selection is complete
-        if (this.isMouseDown) {
-            // this.ntb.debug('mousedown - exiting');
+        if (this.ntb.listeners.document.isMouseDown) {
+            this.ntb.debug('TextToolbar: mousedown - exiting');
             return;
         };
 
@@ -95,23 +57,24 @@ export class TextToolbarClass implements PluginValue {
         // this.ntb.debug('selection:', selection);
 
         // right-clicking for some reason selects the current line if it's empty
-        if (this.isContextOpening && this.selection.from === this.selection.from + 1) {
-            this.ntb.debug('⛔️ selection is just new line - exiting');
-            this.isContextOpening = false;
+        if (this.ntb.listeners.document.isContextOpening && this.selection.from === this.selection.from + 1) {
+            this.ntb.debug('TextToolbar: selection is just new line - exiting');
+            this.ntb.listeners.document.isContextOpening = false;
             return;
         }
 
         if (!update.selectionSet) {
             if (this.ntb.render.isFloatingToolbarFocussed()) {
-                this.ntb.debug('toolbar in focus - exiting');
+                this.ntb.debug('TextToolbar: toolbar in focus - exiting');
                 return;
             }
+            // no text selected, or the view no longer has focus
             if (this.selection.from === this.selection.to || !view.hasFocus) {
                 if (this.ntb.render.hasFloatingToolbar()) {
-                    this.ntb.debugGroup('⛔️ no selection or view out of focus - removing toolbar');
+                    this.ntb.debugGroup('TextToolbar: ⛔️ no selection or view out of focus - removing toolbar');
                     this.ntb.debug(
-                        'selection empty:', this.selection.from === this.selection.to, ' • has focus: view', view.hasFocus, 'toolbar', 
-                        this.ntb.render.isFloatingToolbarFocussed());
+                        ' • selection empty:', this.selection.from === this.selection.to, 
+                        ' • view focussed:', view.hasFocus);
                     this.ntb.debugGroupEnd();
                     this.ntb.render.removeFloatingToolbar();
                 }
@@ -122,7 +85,7 @@ export class TextToolbarClass implements PluginValue {
         if (selection.empty) {
             this.lastSelection = null;
             if (this.ntb.render.hasFloatingToolbar()) {
-                this.ntb.debug('⛔️ selection empty - removing toolbar');
+                this.ntb.debug('TextToolbar: ⛔️ selection empty - removing toolbar');
                 this.ntb.render.removeFloatingToolbar();
             }
             return;
@@ -142,15 +105,16 @@ export class TextToolbarClass implements PluginValue {
 
             if (!this.selection) return;
 
-            const selectStartPos: Rect | undefined = view.coordsAtPos(this.selection.from) ?? undefined;
-            const selectEndPos: Rect | undefined = view.coordsAtPos(this.selection.to) ?? undefined;
             const toolbar = this.ntb.settingsManager.getToolbarById(this.ntb.settings.textToolbar);
             if (!toolbar) {
-                this.ntb.debug('⚠️ error: no text toolbar with ID', this.ntb.settings.textToolbar);
+                this.ntb.debug('⚠️ TextToolbar: Error: toolbar with ID', this.ntb.settings.textToolbar);
                 new Notice(t('setting.error-invalid-text-toolbar')).containerEl.addClass('mod-warning');
                 return;
             };
-            await this.ntb.render.renderFloatingToolbar(toolbar, selectStartPos, selectEndPos);
+
+            // place the toolbar above the cursor, which takes the selection into account
+            const cursorPos = this.ntb.utils.getPosition('cursor');
+            await this.ntb.render.renderFloatingToolbar(toolbar, cursorPos);
 
             this.lastSelection = {
                 from: this.selection.from,

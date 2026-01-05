@@ -1,13 +1,20 @@
 import NoteToolbarPlugin from "main";
-import { TFile, ItemView, MarkdownView, CachedMetadata, debounce, Notice, MarkdownViewModeType } from "obsidian";
-import { LocalVar, ToolbarSettings, ToolbarItemSettings, t } from "Settings/NoteToolbarSettings";
+import { Editor, ItemView, MarkdownFileInfo, MarkdownView, MarkdownViewModeType, Menu, TFile } from "obsidian";
+import { LocalVar } from "Settings/NoteToolbarSettings";
 import { getViewId } from "Utils/Utils";
-import { TbarData } from "./ToolbarRenderer";
+import EditorMenu from "../Toolbar/EditorMenu";
+import FileMenu from "../Toolbar/FileMenu";
+import RibbonMenu from "../Toolbar/RibbonMenu";
+import { TbarData } from "../Toolbar/ToolbarRenderer";
 
 /**
  * Handles Obsidian changes registered with Obsidian's `registerEvent()`.
  */
-export default class ChangeListener {
+export default class WorkspaceListeners {
+
+	private editorMenu: EditorMenu;
+	private fileMenu: FileMenu;
+	private ribbonMenu: RibbonMenu;
 
     workspacesPlugin: { instance: any; enabled: boolean } | null = null;
     
@@ -16,10 +23,6 @@ export default class ChangeListener {
 	lastFileOpenedOnLayoutChange: TFile | null | undefined;
 	lastViewModeOnLayoutChange: MarkdownViewModeType | undefined;
 
-	// track the last used file and property, to prompt if Note Toolbar property references unknown toolbar
-	lastFileOpenedOnCacheChange: TFile | null;
-	lastNtbPropValue: string | undefined;
-
 	// TODO: remove if not needed
 	// __onNoteChange__leafFiles: { [id: string]: TFile | null } = {};
 	// __onNoteChange__leafCallbacks: { [id: string]: (oldFile: TFile | null, newFile: TFile) => void } = {};
@@ -27,7 +30,22 @@ export default class ChangeListener {
 
     constructor(
         private ntb: NoteToolbarPlugin
-    ) {}
+    ) {
+		this.editorMenu = new EditorMenu(ntb);
+		this.fileMenu = new FileMenu(ntb);
+		this.ribbonMenu = new RibbonMenu(ntb);
+	}
+
+	register() {
+		this.ntb.registerEvent(this.ntb.app.workspace.on('file-open', this.onFileOpen));
+		this.ntb.registerEvent(this.ntb.app.workspace.on('active-leaf-change', this.onLeafChange));
+		this.ntb.registerEvent(this.ntb.app.workspace.on('layout-change', this.onLayoutChange));
+		this.ntb.registerEvent(this.ntb.app.workspace.on('css-change', this.onCssChange));
+
+		// add items to menus
+		this.ntb.registerEvent(this.ntb.app.workspace.on('file-menu', this.onFileMenu));
+		this.ntb.registerEvent(this.ntb.app.workspace.on('editor-menu', this.onEditorMenu));
+	}
 
 	/**
 	 * Track changes to the theme (for better CSS overrides when rendering toolbars).
@@ -39,6 +57,22 @@ export default class ChangeListener {
 	};
 
 	/**
+	 * On opening of the editor menu, check what was selected and add relevant menu options.
+	 */
+	onEditorMenu = async (menu: Menu, editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
+		await this.editorMenu.render(menu, editor, view);
+	}
+
+	/**
+	 * On opening of the file menu, check and render toolbar as a submenu.
+	 * @param menu the file Menu
+	 * @param file TFile for link that was clicked on
+	 */
+	onFileMenu = (menu: Menu, file: TFile) => {
+		this.fileMenu.render(menu, file);
+	}
+
+	/**
 	 * On opening of a file, track recent files that have been opened (for more helpful file select UI).
 	 * @param file TFile that was opened.
 	 */
@@ -47,30 +81,6 @@ export default class ChangeListener {
 		// update list of the most recently opened files
 		if (file) await this.ntb.settingsManager.updateRecentList(LocalVar.RecentFiles, file.path);
 	};
-
-	/**
-	 * On rename of file, update any item links that reference the old name.
-	 * @param file TFile of the new file.
-	 * @param oldPath old path.
-	 */
-	onFileRename = async (file: TFile, oldPath: string) => {
-		let settingsChanged = false;
-		this.ntb.settings.toolbars.forEach((toolbar: ToolbarSettings) => {
-			toolbar.items.forEach((item: ToolbarItemSettings) => {
-				if (item.link === oldPath) {
-					this.ntb.debug('fileRenameListener: changing', item.link, 'to', file.path);
-					item.link = file.path;
-					settingsChanged = true;
-				}
-				if (item.scriptConfig?.sourceFile === oldPath) {
-					this.ntb.debug('fileRenameListener: changing', item.scriptConfig?.sourceFile, 'to', file.path);
-					item.scriptConfig.sourceFile = file.path;
-					settingsChanged = true;
-				}
-			});
-		});
-		if (settingsChanged) await this.ntb.settingsManager.save();
-	}
 
 	/**
 	 * On layout changes, render and update toolbars as necessary.
@@ -152,6 +162,12 @@ export default class ChangeListener {
 		const viewId = getViewId(currentView);
 		this.ntb.debug('===== LEAF-CHANGE ===== ', viewId);
 
+		// listen to scroll events for floating toolbars
+		const itemView = this.ntb.app.workspace.getActiveViewOfType(ItemView);
+		if (itemView && this.ntb.utils.checkToolbarForItemView(itemView)) {
+			this.ntb.listeners.document.setupScrollListener(leaf);
+		}
+
 		// update the active toolbar if its configuration changed
 		if (toolbarEl) {
 			let activeToolbar = this.ntb.settingsManager.getToolbarById(toolbarEl.id);
@@ -190,47 +206,13 @@ export default class ChangeListener {
 	}
 
 	/**
-	 * On changes to metadata, trigger the checks and rendering of a toolbar if necessary.
-	 * @param file TFile in which metadata changed.
-	 * @param data ??? (not used)
-	 * @param cache CachedMetadata, from which we look at the frontmatter.
+	 * Handles what happens when the ribbon icon is used.
+	 * @param event MouseEvent
 	 */
-	onMetadataChange = async (file: TFile, data: any, cache: CachedMetadata) => {
-		const activeFile = this.ntb.app.workspace.getActiveFile();
-		// if the active file is the one that changed,
-		// and the file was modified after it was created (fix for a duplicate toolbar on Create new note)
-		if (activeFile === file && (file.stat.mtime > file.stat.ctime)) {
-			this.ntb.debug('===== METADATA-CHANGE ===== ', file.name);
-			debounce(async () => {
-				// FIXME: should this instead update all visible toolbars?
-				const toolbarView = this.ntb.app.workspace.getActiveViewOfType(ItemView) ?? undefined;
-				await this.ntb.render.checkAndRender(file, cache.frontmatter, toolbarView);
+	onRibbonMenu = async (event: MouseEvent) => {
+		await this.ribbonMenu.render(event);
+	}
 	
-				// prompt to create a toolbar if it doesn't exist in the Note Toolbar property
-				const ntbPropValue = this.ntb.settingsManager.getToolbarNameFromProps(cache.frontmatter);
-				if (ntbPropValue && this.ntb.settings.toolbarProp !== 'tags') {
-					// make sure just the relevant property changed in the open file
-					if (this.lastFileOpenedOnCacheChange !== activeFile) this.lastNtbPropValue = undefined;
-					const ignoreToolbar = ntbPropValue.includes('none') ? true : false;
-					if (ntbPropValue !== this.lastNtbPropValue) {
-						const matchingToolbar = ignoreToolbar ? undefined : this.ntb.settingsManager.getToolbarByName(ntbPropValue);
-						if (!matchingToolbar && !ignoreToolbar) {
-							const notice = new Notice(t('notice.warning-no-matching-toolbar', { toolbar: ntbPropValue }), 7500);
-							notice.messageEl.addClass('note-toolbar-notice-pointer');
-							this.ntb.registerDomEvent(notice.messageEl, 'click', async () => {
-								const newToolbar = await this.ntb.settingsManager.newToolbar(ntbPropValue);
-								this.ntb.settingsManager.openToolbarSettings(newToolbar);
-							});
-						}
-					}
-				}
-				// track current state to look for future Note Toolbar property changes
-				this.lastNtbPropValue = ntbPropValue;
-				this.lastFileOpenedOnCacheChange = activeFile;
-			}, 300)();
-		}
-	};
-
 	// TODO: remove if not needed
 	// onMarkdownViewFileChange(view: MarkdownView, callback: (oldFile: TFile, newFile: TFile) => void) {
 	// 	if (!(view.leaf.id in this.__onNoteChange__leafFiles)) {

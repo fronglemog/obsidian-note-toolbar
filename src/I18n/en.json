@@ -411,7 +411,7 @@
             "option-command-error-not-available-search": "This command cannot be found. Try searching again.",
             "option-command-error-refresh": "Refresh",
             "option-command-check": "Disable if not available",
-            "option-command-check-description": "If the command cannot be performed in the current context, the item will be disabled in the toolbar.",
+            "option-command-check-description": "If the command indicates that it cannot be performed in the current context, the item will be disabled in the toolbar.",
             "option-command-focus": "Focus in editor",
             "option-command-focus-description": "Set focus in editor after the command is executed.",
             "option-command-help": "Runs a command when this item is used.",
@@ -571,7 +571,7 @@
                 "name": "Navbar item visibility 📱"
             },
             "scripting": {
-                "description": "Adds support for Dataview, JS Engine, and Templater, which must be installed and enabled.",
+                "description": "Adds support for Dataview, JavaScript, JS Engine, and Templater. Plugins must be installed and enabled.",
                 "name": "Scripting"
             },
             "show-edit-tbar": {
@@ -686,6 +686,8 @@
             "duplicated-tbar-suffix": "copy",
             "label-empty-create-tbar": "Use the button to create a toolbar.",
             "label-tbar-name-not-set": "Toolbar name not set",
+            "menu-copy-id": "Copy developer ID",
+            "menu-copy-id-notice": "Toolbar ID copied to clipboard.",
             "name": "Toolbars",
             "name-with-count": "Toolbars ({{count}})",
             "new-tbar-name": "New toolbar"

@@ -9,13 +9,19 @@ I would appreciate your feedback, which you can leave in [the discussions](https
 > [!warning]
 > While you could also directly access Note Toolbar's settings or toolbar items via `app.plugins.getPlugin("note-toolbar").settings`, be aware that these are subject to change and may break your scripts. The API will be the official way to access and change information about toolbars.
 
-## Copy developer ID for items
+## Copy developer ID for toolbars and items
 
-In each item's _More actions..._ menu, use `Copy developer ID` to copy the unique identifier (UUID) for any toolbar item to the clipboard. 
+To get a unique identifier (UUID):
 
-From code you can then target the item and make changes to it:
+- for toolbars, go to Note Toolbar's main settings, and use **More options → Copy developer ID**; and
+- for toolbar items, go to each item's settings, and use **More actions... → Copy developer ID**. 
+
+Use this as another method to uniquely style toolbars or items, or reference them in the API, without worrying if their names might change.
+
+Here's a code examples with items:
 
 ```js
+// update this item's icon
 const item = ntb.getItem('112c7ed3-d5c2-4750-b95d-75bc84e23513');
 item.setIcon('alert');
 
@@ -41,6 +47,7 @@ const itemEl = activeDocument.getElementById('112c7ed3-d5c2-4750-b95d-75bc84e235
 - [[ntb.setSelection|Note-Toolbar-API#setselection]]
 - [[ntb.suggester|Note-Toolbar-API#suggester]]
 - [[ntb.t|Note-Toolbar-API#t]]
+- [[ntb.toolbar|Note-Toolbar-API#toolbar]]
 
 ---
 
@@ -253,10 +260,11 @@ Shows a menu with the provided items.
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `toolbarOrItems` | `string` \| [`NtbMenuItem`](INoteToolbarApi.Interface.NtbMenuItem.md)[] | Toolbar name or UUID; or an array of items to display. See [NtbMenuItem](INoteToolbarApi.Interface.NtbMenuItem.md). |
-| `options?` | \{ `class?`: `string`; `focusInMenu?`: `boolean`; `position`: `"cursor"` \| `"toolbar"` \| `"pointer"`; \} | Optional display options. |
+| `options?` | \{ `class?`: `string`; `focusInMenu?`: `boolean`; `id?`: `string`; `position`: `"cursor"` \| `"toolbar"` \| `"pointer"`; \} | Optional display options. |
 | `options.class?` | `string` | Optional CSS class(es) to add to the component. |
 | `options.focusInMenu?` | `boolean` | If `true`, the menu item will be focused when the menu opens; defaults to `false`. |
-| `options.position?` | `"cursor"` \| `"toolbar"` \| `"pointer"` | Sets the position in which the menu will appear; defaults to `toolbar`. `cursor`: editor cursor position (falls back to pointer, e.g., if editor is not in focus); `pointer`: mouse/pointer position; `toolbar`: last clicked toolbar element position (falls back to pointer) **Since** 1.27 |
+| `options.id?` | `string` | Optional ID to add to the menu when it's rendered. **Since** 1.27 |
+| `options.position?` | `"cursor"` \| `"toolbar"` \| `"pointer"` | Sets the position in which the menu will appear; defaults to `toolbar`. `cursor`: editor cursor or selected text position (falls back to pointer position, e.g., if editor is not in focus); `pointer`: mouse/pointer position; `toolbar`: last clicked toolbar element position (falls back to pointer position) **Since** 1.27 |
 
 #### Returns
 
@@ -573,7 +581,7 @@ Shows a (floating) toolbar. Defaults to the 'toolbar' position.
 | `toolbarNameOrId` | `string` | Toolbar name or UUID. |
 | `options?` | \{ `class?`: `string`; `position`: `"cursor"` \| `"toolbar"` \| `"pointer"`; \} | Optional display options. |
 | `options.class?` | `string` | Optional CSS class(es) to add to the component. |
-| `options.position?` | `"cursor"` \| `"toolbar"` \| `"pointer"` | Sets the position in which the toolbar will appear; defaults to `toolbar`. `cursor`: editor cursor position (falls back to pointer, e.g., if editor is not in focus); `pointer`: mouse/pointer position; `toolbar`: last clicked toolbar element position (falls back to pointer) |
+| `options.position?` | `"cursor"` \| `"toolbar"` \| `"pointer"` | Sets the position in which the toolbar will appear; defaults to `toolbar`. `cursor`: editor cursor or selected text position (falls back to pointer position, e.g., if editor is not in focus); `pointer`: mouse/pointer position; `toolbar`: last clicked toolbar element position (falls back to pointer position) |
 
 #### Returns
 
@@ -589,7 +597,7 @@ await ntb.toolbar('Daily Notes');
 ```
 
 ```ts
-// show the "Daily Notes" toolbar at the cursor position
+// show the "Daily Notes" toolbar at the cursor position (or above the text selection)
 await ntb.toolbar('Daily Notes', { position: 'cursor' });
 ```
 

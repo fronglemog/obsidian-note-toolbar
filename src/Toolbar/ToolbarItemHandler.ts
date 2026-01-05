@@ -1,15 +1,12 @@
 import NoteToolbarPlugin from "main";
-import { TFile, PaneType, TFolder, Notice, MarkdownView, Command, ItemView } from "obsidian";
-import { ToolbarItemSettings, ItemType, t, ItemFocusType, LINK_OPTIONS, ScriptConfig, CalloutAttr, SCRIPT_ATTRIBUTE_MAP, ToolbarSettings } from "Settings/NoteToolbarSettings";
+import { Command, ItemView, MarkdownView, Notice, PaneType, TFile, TFolder } from "obsidian";
+import { ItemFocusType, ItemType, LINK_OPTIONS, ScriptConfig, t, ToolbarItemSettings } from "Settings/NoteToolbarSettings";
 import { getLinkUiTarget, insertTextAtCursor, isValidUri, putFocusInMenu } from "Utils/Utils";
 
 /**
  * Handles interactions with toolbar items.
  */
 export default class ToolbarItemHandler {
-
-    // track the last used callout link, for the menu URI
-    lastCalloutLink: Element | null = null;
 
     // track the last clicked element, for the menu API
     lastClickedEl: Element | null = null;
@@ -19,98 +16,39 @@ export default class ToolbarItemHandler {
     ) {}
 
 	/**
-	 * Handles links followed from Note Toolbar Callouts, including handling commands, folders, and menus.
-	 * Links take the form [Tools]()<data data-ntb-menu="Tools"/>
-	 * @param MouseEvent 
+	 * On click of an item in the toolbar, we replace any variables that might
+	 * be in the URL, and then open it.
+	 * @param event MouseEvent
 	 */
-	async calloutLinkHandler(e: MouseEvent) {
+	onItemClick = async (event: MouseEvent) => {
 
-		const target = e.target as HTMLElement | null;
-		const clickedCalloutEl = target?.closest('.callout[data-callout="note-toolbar"]');
-		
-		// only process clicks inside of Note Toolbar callouts
-		if (clickedCalloutEl) {
+		// this.ntb.debug('clickHandler:', event);
 
-			// remove any active item attributes from the main toolbar, so the API doesn't fetch the wrong item
-			// (not supported for Note Toolbar Callouts)
-			this.ntb.render.updateActiveItem();
+		// allow standard and middle clicks through
+		if (event.type === 'click' || (event.type === 'auxclick' && event.button === 1)) {
 
-			// prevent expansion of callouts if setting is enabled
-			if (this.ntb.settings.lockCallouts) {
-				if (clickedCalloutEl.hasAttribute('data-callout-fold')) {
-					e.preventDefault();
+			let clickedEl = event.currentTarget as HTMLLinkElement;
+			let linkHref = clickedEl.getAttribute("href");
+	
+			if (linkHref != null) {
+				
+				const itemUuid = clickedEl.id;
+
+				let linkType = clickedEl.getAttribute("data-toolbar-link-attr-type") as ItemType;
+				linkType ? (Object.values(ItemType).includes(linkType) ? event.preventDefault() : undefined) : undefined
+	
+				// this.ntb.debug('clickHandler: ', 'clickedEl: ', clickedEl);
+	
+				let linkCommandId = clickedEl.getAttribute("data-toolbar-link-attr-commandid");
+				
+				// remove the focus effect if clicked with a mouse
+				if ((event as PointerEvent)?.pointerType === "mouse") {
+					clickedEl.blur();
+					await this.ntb.render.removeFocusStyle();
 				}
-			}
 
-			const clickedItemEl = target?.closest('.callout[data-callout="note-toolbar"] a.external-link');
-			if (clickedItemEl) {
-				// this.debug('calloutLinkHandler:', target, clickedItemEl);
-				this.lastCalloutLink = clickedItemEl as HTMLLinkElement;
-				let dataEl = clickedItemEl?.nextElementSibling;
-				if (dataEl) {
-					// make sure it's a valid attribute, and get its value
-					const attribute = Object.values(CalloutAttr).find(attr => dataEl?.hasAttribute(attr));
-					attribute ? e.preventDefault() : undefined; // prevent callout code block from opening
-					const value = attribute ? dataEl?.getAttribute(attribute) : null;
-					
-					switch (attribute) {
-						case CalloutAttr.Command:
-						case CalloutAttr.CommandNtb:
-							this.handleLinkCommand(value);
-							break;
-						case CalloutAttr.Dataview:
-						case CalloutAttr.JavaScript:
-						case CalloutAttr.JsEngine:
-						case CalloutAttr.Templater: {
-							const scriptConfig = {
-								pluginFunction: value,
-								expression: dataEl?.getAttribute(SCRIPT_ATTRIBUTE_MAP['expression']) ?? undefined,
-								sourceFile: dataEl?.getAttribute(SCRIPT_ATTRIBUTE_MAP['sourceFile']) ?? undefined,
-								sourceFunction: dataEl?.getAttribute(SCRIPT_ATTRIBUTE_MAP['sourceFunction']) ?? undefined,
-								sourceArgs: dataEl?.getAttribute(SCRIPT_ATTRIBUTE_MAP['sourceArgs']) ?? undefined,
-								outputContainer: dataEl?.getAttribute(SCRIPT_ATTRIBUTE_MAP['outputContainer']) ?? undefined,
-								outputFile: dataEl?.getAttribute(SCRIPT_ATTRIBUTE_MAP['outputFile']) ?? undefined,
-							} as ScriptConfig;
-							switch (attribute) {
-								case CalloutAttr.Dataview:
-									this.handleLinkScript(ItemType.Dataview, scriptConfig);
-									break;
-								case CalloutAttr.JavaScript:
-									this.handleLinkScript(ItemType.JavaScript, scriptConfig);
-									break;
-								case CalloutAttr.JsEngine:
-									this.handleLinkScript(ItemType.JsEngine, scriptConfig);
-									break;
-								case CalloutAttr.Templater:
-									this.handleLinkScript(ItemType.Templater, scriptConfig);
-									break;	
-							}
-							break;
-						}
-						case CalloutAttr.Folder:
-						case CalloutAttr.FolderNtb:
-							this.handleLinkFolder(value);
-							break;
-						case CalloutAttr.Menu:
-						case CalloutAttr.MenuNtb: {
-							const activeFile = this.ntb.app.workspace.getActiveFile();
-							const toolbar: ToolbarSettings | undefined = this.ntb.settingsManager.getToolbar(value);
-							if (activeFile) {
-								if (toolbar) {
-									this.ntb.render.renderAsMenu(toolbar, activeFile).then(menu => {
-										this.ntb.render.showMenuAtElement(menu, this.lastCalloutLink);
-									});
-								}
-								else {
-									new Notice(
-                                        t('notice.error-item-menu-not-found', { toolbar: value })
-                                    ).containerEl.addClass('mod-warning');
-								}
-							}
-							break;
-						}
-					}
-				}
+				await this.ntb.items.handleLink(itemUuid, linkHref, linkType, linkCommandId, event);
+	
 			}
 
 		}

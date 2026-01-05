@@ -289,6 +289,16 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 									menu.addSeparator();
 									menu.addItem((menuItem: MenuItem) => {
 										menuItem
+											.setTitle(t('setting.toolbars.menu-copy-id'))
+											.setIcon('code')
+											.onClick(async (menuEvent) => {
+												navigator.clipboard.writeText(toolbar.uuid);
+												new Notice(t('setting.toolbars.menu-copy-id-notice')).containerEl.addClass('mod-success');
+											});
+									});
+									menu.addSeparator();
+									menu.addItem((menuItem: MenuItem) => {
+										menuItem
 											.setTitle(t('setting.delete-toolbar.button-delete'))
 											.setIcon('minus-circle')
 											.onClick(async () => {
@@ -1361,6 +1371,8 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 					cb.setValue(this.ntb.settings.debugEnabled)
 					cb.onChange(async (value) => {
 						this.ntb.settings.debugEnabled = value;
+						this.ntb.toggleDebugging();
+						this.ntb.debug('Note Toolbar debugging:', value); // should not output if debugging is disabled
 						await this.ntb.settingsManager.save();
 					});
 				});

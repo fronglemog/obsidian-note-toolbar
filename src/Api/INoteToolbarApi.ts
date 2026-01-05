@@ -13,13 +13,19 @@ import { IToolbar } from "./IToolbar";
  * > [!warning]
  * > While you could also directly access Note Toolbar's settings or toolbar items via `app.plugins.getPlugin("note-toolbar").settings`, be aware that these are subject to change and may break your scripts. The API will be the official way to access and change information about toolbars.
  * 
- * ## Copy developer ID for items
+ * ## Copy developer ID for toolbars and items
  * 
- * In each item's _More actions..._ menu, use `Copy developer ID` to copy the unique identifier (UUID) for any toolbar item to the clipboard. 
+ * To get a unique identifier (UUID):
  * 
- * From code you can then target the item and make changes to it:
+ * - for toolbars, go to Note Toolbar's main settings, and use **More options → Copy developer ID**; and
+ * - for toolbar items, go to each item's settings, and use **More actions... → Copy developer ID**. 
+ * 
+ * Use this as another method to uniquely style toolbars or items, or reference them in the API, without worrying if their names might change.
+ * 
+ * Here's a code examples with items:
  * 
  * ```js
+ * // update this item's icon
  * const item = ntb.getItem('112c7ed3-d5c2-4750-b95d-75bc84e23513');
  * item.setIcon('alert');
  * 
@@ -45,6 +51,7 @@ import { IToolbar } from "./IToolbar";
  * - [[ntb.setSelection|Note-Toolbar-API#setselection]]
  * - [[ntb.suggester|Note-Toolbar-API#suggester]]
  * - [[ntb.t|Note-Toolbar-API#t]]
+ * - [[ntb.toolbar|Note-Toolbar-API#toolbar]]
  * 
  * ---
  * 
@@ -336,7 +343,7 @@ export default interface INoteToolbarApi<T> {
      * await ntb.toolbar('Daily Notes');
      * 
      * @example
-     * // show the "Daily Notes" toolbar at the cursor position
+     * // show the "Daily Notes" toolbar at the cursor position (or above the text selection)
      * await ntb.toolbar('Daily Notes', { position: 'cursor' });
      * 
      * @since 1.27
@@ -353,6 +360,12 @@ export interface NtbMenuItem {
      * Optional icon to display in the menu item.
      */
     icon?: string;
+    /**
+     * Optional ID to add to the menu item when it's rendered.
+     * 
+     * @since 1.27
+     */
+    id?: string;
     /**
      * Label for the menu item.
      */
@@ -381,10 +394,16 @@ export interface NtbMenuOptions {
      */
     focusInMenu?: boolean;
     /**
+     * Optional ID to add to the menu when it's rendered.
+     * 
+     * @since 1.27
+     */
+    id?: string;
+    /**
      * Sets the position in which the menu will appear; defaults to `toolbar`.
-     * `cursor`: editor cursor position (falls back to pointer, e.g., if editor is not in focus);
+     * `cursor`: editor cursor or selected text position (falls back to pointer position, e.g., if editor is not in focus);
 	 * `pointer`: mouse/pointer position;
-	 * `toolbar`: last clicked toolbar element position (falls back to pointer)
+	 * `toolbar`: last clicked toolbar element position (falls back to pointer position)
      * 
      * @since 1.27
      */
@@ -488,9 +507,9 @@ export interface NtbToolbarOptions {
     class?: string;
     /**
      * Sets the position in which the toolbar will appear; defaults to `toolbar`.
-     * `cursor`: editor cursor position (falls back to pointer, e.g., if editor is not in focus);
+     * `cursor`: editor cursor or selected text position (falls back to pointer position, e.g., if editor is not in focus);
 	 * `pointer`: mouse/pointer position;
-	 * `toolbar`: last clicked toolbar element position (falls back to pointer)
+	 * `toolbar`: last clicked toolbar element position (falls back to pointer position)
      */
     position: 'cursor' | 'pointer' | 'toolbar';
 }
