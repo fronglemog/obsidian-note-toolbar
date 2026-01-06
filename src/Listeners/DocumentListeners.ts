@@ -1,5 +1,5 @@
 import NoteToolbarPlugin from "main";
-import { ItemView, Platform, WorkspaceLeaf } from "obsidian";
+import { ItemView, MarkdownView, Platform, WorkspaceLeaf } from "obsidian";
 
 
 export default class DocumentListeners {
@@ -15,6 +15,8 @@ export default class DocumentListeners {
     // we only need to listen to one scroll container at a time
     private scrollContainer: HTMLElement | null = null;
 
+    private previewSelection: Selection | null = null;
+
     constructor(
         private ntb: NoteToolbarPlugin
     ) {}
@@ -29,20 +31,24 @@ export default class DocumentListeners {
         // listen on the document to catch mouse releases outside of the editor
         this.ntb.registerDomEvent(activeDocument, 'mouseup', this.onMouseUp);
 
+        this.ntb.registerDomEvent(activeDocument, 'selectionchange', this.onSelection);
+
         // setup initial scroll listener; subsequently done in onLeafChange
         const activeView = this.ntb.app.workspace.getActiveViewOfType(ItemView);
         if (activeView && this.ntb.utils.checkToolbarForItemView(activeView)) {
             this.setupScrollListener(activeView.leaf);
         }
+
     }
     
     onContextMenu = () => {
         this.isContextOpening = true;
     }
 
-    onDoubleClick = (event: MouseEvent) => {
+    onDoubleClick = async (event: MouseEvent) => {
         // possible issue? not always true?
         this.isMouseSelection = true;
+        this.renderPreviewTextToolbar();
     }
 
     onKeyDown = (event: KeyboardEvent) => {
@@ -51,7 +57,14 @@ export default class DocumentListeners {
     }
     
     onMouseDown = (event: MouseEvent) => {
+        this.ntb.debug('onMouseDown', event.target);
         this.isMouseDown = true;
+        // TODO? dismiss floating toolbar if click is not inside a floating toolbar? (or its menus, etc?)
+        // const clickTarget = event.target as Node;
+        // const toolbarEl = this.ntb.render.floatingToolbarEl;
+        if (!this.ntb.render.floatingToolbarEl?.contains(event.target as Node)) {
+            this.ntb.render.removeFloatingToolbar();
+        }
     }
 
     onMouseMove = (event: MouseEvent) => {
@@ -62,8 +75,10 @@ export default class DocumentListeners {
         }
     }
 
-    onMouseUp = (event: MouseEvent) => {
+    onMouseUp = async (event: MouseEvent) => {
+        this.ntb.debug('onMouseUp');
         this.isMouseDown = false;
+        this.renderPreviewTextToolbar();
     }
 
     /**
@@ -76,6 +91,14 @@ export default class DocumentListeners {
             if (!cursorPos) return;
             this.ntb.render.positionFloating(this.ntb.render.floatingToolbarEl, cursorPos, Platform.isAndroidApp ? 'below' : 'above');
         }
+    }
+
+    /**
+     * Track any document selections, but only for Preview mode.
+     */
+    onSelection = async (event: any) => {
+        this.ntb.debug('onSelection');
+        await this.updatePreviewSelection();
     }
 
     /**
@@ -118,14 +141,12 @@ export default class DocumentListeners {
 
     /**
      * Listens to changes on scroll using {@link onScroll}.
-     * 
-     * @param leaf 
-     * @returns 
      */
     public setupScrollListener(leaf: WorkspaceLeaf): void {
         // remove existing
         if (this.scrollContainer) {
             this.scrollContainer.removeEventListener('scroll', this.onScroll);
+            this.scrollContainer = null;
         }
 
         // get the scrollable container based on view type
@@ -137,6 +158,30 @@ export default class DocumentListeners {
 
         // add scroll listener
         this.ntb.registerDomEvent(this.scrollContainer, 'scroll', this.onScroll);
+    }
+
+    /**
+     * Show text toolbar for selection in Preview mode.
+     */
+    private async renderPreviewTextToolbar() {
+        await this.updatePreviewSelection();
+        if (this.ntb.settings.textToolbar && this.previewSelection) {
+            this.ntb.debug('renderPreviewTextToolbar', this.previewSelection.toString());
+            const textToolbar = this.ntb.settingsManager.getToolbarById(this.ntb.settings.textToolbar);
+            if (textToolbar) {
+                const cursorPos = this.ntb.utils.getPosition('cursor');
+                await this.ntb.render.renderFloatingToolbar(textToolbar, cursorPos);
+            }
+        }
+    }
+
+    private async updatePreviewSelection() {
+        const activeView = this.ntb.app.workspace.getActiveViewOfType(ItemView);
+        const selection = (activeView instanceof MarkdownView && activeView.getMode() === 'preview')
+            ? activeDocument.getSelection()
+            : null;
+        this.previewSelection = (selection && selection.toString().trim().length > 0) ? selection : null;
+        this.ntb.debug('updatePreviewSelection', this.previewSelection?.toString());
     }
 
 }
