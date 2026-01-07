@@ -1,7 +1,7 @@
 import { EditorView, PluginValue, Rect, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import NoteToolbarPlugin from 'main';
 import { Notice, Platform } from 'obsidian';
-import { t } from 'Settings/NoteToolbarSettings';
+import { PositionType, t } from 'Settings/NoteToolbarSettings';
 
 /**
  * Renders the configured toolbar when text is selected.
@@ -39,8 +39,8 @@ export class TextToolbarClass implements PluginValue {
             if (this.ntb.render.hasFloatingToolbar()) this.ntb.render.removeFloatingToolbar();
             return;
         };
-        
-        // don't show toolbar until selection is complete
+
+        // don't show toolbar until mouse selection is complete
         if (this.ntb.listeners.document.isMouseDown) {
             this.ntb.debug('TextToolbar: mousedown - exiting');
             return;
@@ -70,7 +70,7 @@ export class TextToolbarClass implements PluginValue {
             }
             // no text selected, or the view no longer has focus
             if (this.selection.from === this.selection.to || !view.hasFocus) {
-                if (this.ntb.render.hasFloatingToolbar()) {
+                if (this.ntb.render.hasFloatingTextToolbar()) {
                     this.ntb.debugGroup('TextToolbar: ⛔️ no selection or view out of focus - removing toolbar');
                     this.ntb.debug(
                         ' • selection empty:', this.selection.from === this.selection.to, 
@@ -84,7 +84,7 @@ export class TextToolbarClass implements PluginValue {
 
         if (selection.empty) {
             this.lastSelection = null;
-            if (this.ntb.render.hasFloatingToolbar()) {
+            if (this.ntb.render.hasFloatingTextToolbar()) {
                 this.ntb.debug('TextToolbar: ⛔️ selection empty - removing toolbar');
                 this.ntb.render.removeFloatingToolbar();
             }
@@ -114,7 +114,7 @@ export class TextToolbarClass implements PluginValue {
 
             // place the toolbar above the cursor, which takes the selection into account
             const cursorPos = this.ntb.utils.getPosition('cursor');
-            await this.ntb.render.renderFloatingToolbar(toolbar, cursorPos);
+            await this.ntb.render.renderFloatingToolbar(toolbar, cursorPos, PositionType.Text);
 
             this.lastSelection = {
                 from: this.selection.from,
@@ -122,11 +122,6 @@ export class TextToolbarClass implements PluginValue {
                 text: this.selection.text
             };
 
-            // TODO: do we need this?
-            // if (!this.isMouseSelection) {
-            //     this.isMouseDown = false;
-            // }
-            
         });
 
     }

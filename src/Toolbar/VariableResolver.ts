@@ -49,9 +49,13 @@ export default class VariableResolver {
 	 */
 	async replaceVars(s: string, file: TFile | null, errorBehavior: ErrorBehavior = ErrorBehavior.Report): Promise<string> {
 
+		const hasVar = (varKey: string) => new RegExp(`\\{\\{\\s*(?:encode:)?\\s*${varKey}\\s*\\}\\}`).test(s);
+
 		// SELECTION
-		const selection = this.ntb.api.getSelection();
-		if (selection) s = this.replaceVar(s, 'selection', selection);
+		if (hasVar('selection')) {
+			const selection = this.ntb.api.getSelection();
+			if (selection) s = this.replaceVar(s, 'selection', selection);
+		}
 
 		// NOTE_TITLE
 		const noteTitle = file?.basename;
@@ -75,7 +79,6 @@ export default class VariableResolver {
 			const key = p1.trim();
 			if (frontmatter && frontmatter[key] !== undefined) {
 				// regex to remove [[ and ]] and any alias (bug #75), in case an internal link was passed
-				// eslint-disable-next-line no-useless-escape
 				const linkWrap = /\[\[([^\|\]]+)(?:\|[^\]]*)?\]\]/g;
 				// handle the case where the prop might be a list, and convert numbers to strings
 				let fm = Array.isArray(frontmatter[key]) ? frontmatter[key].join(',') : String(frontmatter[key]);

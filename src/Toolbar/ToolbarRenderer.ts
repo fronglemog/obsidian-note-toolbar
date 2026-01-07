@@ -39,6 +39,14 @@ export default class ToolbarRenderer {
 	hasFloatingToolbar(): boolean {
 		return this.floatingToolbarEl?.isConnected ?? false;
 	}
+
+	/**
+	 * Check to see if a floating toolbar is present, and is a text toolbar.
+	 * @returns true if a text toolbar is present and visible; false otherwise.
+	 */
+	hasFloatingTextToolbar(): boolean {
+		return this.hasFloatingToolbar() && this.floatingToolbarEl?.getAttribute('data-tbar-position') === PositionType.Text;
+	}
 	
 	/**
 	 * Check to see if a standard toolbar (non-text toolbar) is present.
@@ -1114,11 +1122,13 @@ export default class ToolbarRenderer {
 	 * Renders a floating toolbar at the middle of the given start and end positions in the editor. 
 	 * @param toolbar
 	 * @param position start position
+	 * @param positionType indicate if it's a floating or text toolbar
 	 * @returns nothing
 	 */
 	async renderFloatingToolbar(
 		toolbar: ToolbarSettings | undefined, 
-		position: Rect | undefined
+		position: Rect | undefined,
+		positionType: PositionType.Floating | PositionType.Text
 	): Promise<void> {
 
 		if (!position || !toolbar) return;
@@ -1150,7 +1160,7 @@ export default class ToolbarRenderer {
 		]);
 		toolbarContainerEl.setAttrs({
 			[TbarData.Name]: toolbar.name,
-			[TbarData.Position]: PositionType.Floating,
+			[TbarData.Position]: positionType,
 			[TbarData.Updated]: toolbar.updated
 		});
 		
