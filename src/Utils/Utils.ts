@@ -127,43 +127,67 @@ export default class PluginUtils {
 		}
 		// editor (editing mode) cursor, or selection
 		else {
-			const editor = this.ntb.app.workspace.activeEditor?.editor;
-			
-			// TODO: support other file types here?
-			if (!editor) return;
-			
-			const editorView = (editor as any).cm as EditorView;
-			const cursorOffset = editor.posToOffset(editor.getCursor());
-			const cursorCoords = editorView.coordsAtPos(cursorOffset);
-	
-			if (cursorCoords) {
-				result = {
-					top: cursorCoords.top,
-					bottom: cursorCoords.bottom,
-					left: cursorCoords.left,
-					right: cursorCoords.right
+			// check if selection is in an embed
+			const selectionNode = activeDocument.getSelection()?.focusNode;
+			const element = (selectionNode as HTMLElement)?.closest ? 
+				(selectionNode as HTMLElement) : 
+				(selectionNode as Node)?.parentElement;
+			const embedElement = element?.closest('.markdown-embed');
+
+			if (embedElement) {
+				// for embeds, use document selection like in preview mode
+				const documentSelection = activeDocument.getSelection();
+				if (documentSelection && documentSelection.rangeCount > 0 && !documentSelection.isCollapsed) {
+					const range = documentSelection.getRangeAt(0);
+					const rect = range.getBoundingClientRect();
+					result = {
+						top: rect.top,
+						bottom: rect.bottom,
+						left: rect.left,
+						right: rect.right
+					};
 				}
 			}
-	
-			// if there's an editor selection, return the bounding box of the selection
-			const selection = editor.getSelection();
-			if (selection) {
-				const selectionRange = editor.listSelections()[0];
-				const fromOffset = editor.posToOffset(selectionRange.anchor);
-				const toOffset = editor.posToOffset(selectionRange.head);
+			else {
+				const editor = this.ntb.app.workspace.activeEditor?.editor;
 				
-				const startCoords = editorView.coordsAtPos(fromOffset);
-				const endCoords = editorView.coordsAtPos(toOffset);
+				// TODO: support other file types here?
+				if (!editor) return;
 				
-				if (startCoords && endCoords) {
+				const editorView = (editor as any).cm as EditorView;
+				const cursorOffset = editor.posToOffset(editor.getCursor());
+				const cursorCoords = editorView.coordsAtPos(cursorOffset);
+		
+				if (cursorCoords) {
 					result = {
-						top: Math.min(startCoords.top, endCoords.top),
-						bottom: Math.max(startCoords.bottom, endCoords.bottom),
-						left: Math.min(startCoords.left, endCoords.left),
-						right: Math.max(startCoords.right, endCoords.right)
+						top: cursorCoords.top,
+						bottom: cursorCoords.bottom,
+						left: cursorCoords.left,
+						right: cursorCoords.right
+					}
+				}
+		
+				// if there's an editor selection, return the bounding box of the selection
+				const selection = editor.getSelection();
+				if (selection) {
+					const selectionRange = editor.listSelections()[0];
+					const fromOffset = editor.posToOffset(selectionRange.anchor);
+					const toOffset = editor.posToOffset(selectionRange.head);
+					
+					const startCoords = editorView.coordsAtPos(fromOffset);
+					const endCoords = editorView.coordsAtPos(toOffset);
+					
+					if (startCoords && endCoords) {
+						result = {
+							top: Math.min(startCoords.top, endCoords.top),
+							bottom: Math.max(startCoords.bottom, endCoords.bottom),
+							left: Math.min(startCoords.left, endCoords.left),
+							right: Math.max(startCoords.right, endCoords.right)
+						}
 					}
 				}
 			}
+
 		}
 
 		return result;
@@ -210,6 +234,58 @@ export default class PluginUtils {
 		return lastClickedPos
 			? {	left: lastClickedPos.x, right: lastClickedPos.x, top: lastClickedPos.bottom, bottom: lastClickedPos.bottom }
 			: pointerPos;
+	}
+
+    /**
+     * Gets the selected text, or the word at the cursor position. Only works in markdown editing or reading modes.
+	 * 
+	 * @see INoteToolbarApi.getSelection
+	 * @param previewOnly set to `true` to only return select text in Preview mode or in embeds (useful for text toolbars). 
+	 */
+	getSelection(previewOnly: boolean = false): string {
+
+		const editor = this.ntb.app.workspace.activeEditor?.editor;
+		const view = this.ntb.app.workspace.getActiveViewOfType(ItemView);
+		
+		if (view instanceof MarkdownView) {
+			const mode = view.getMode();
+			const isPreviewMode = mode === 'preview';
+			
+			// check if selection is in an embed (for editing mode)
+			let isInEmbed = false;
+			if (!isPreviewMode) {
+				const selectionNode = activeDocument.getSelection()?.focusNode;
+				const element = (selectionNode as HTMLElement)?.closest ? 
+					(selectionNode as HTMLElement) : 
+					(selectionNode as Node)?.parentElement;
+				isInEmbed = !!element?.closest('.markdown-embed');
+			}
+			
+			// if previewOnly flag is set, only return selection for preview mode or embeds
+			if (previewOnly && !isPreviewMode && !isInEmbed) {
+				return '';
+			}
+			
+			// in preview mode or in an embed, use document selection
+			if (isPreviewMode || isInEmbed) {
+				const documentSelection = activeDocument.getSelection();
+				const selectedText = documentSelection?.toString().trim();
+				if (selectedText) return selectedText;
+			}
+			
+			// in editing mode (not in embed), use editor selection
+			if (!isPreviewMode && !isInEmbed && editor) {
+				const selection = editor.getSelection();
+				if (selection) return selection;
+
+				// or return word at cursor, if there is one
+				const cursor = editor.getCursor();
+				const wordRange = editor.wordAt(cursor);
+				if (wordRange) return editor.getRange(wordRange.from, wordRange.to);
+			}
+		}
+
+		return '';
 	}
 
 	/**

@@ -273,6 +273,12 @@ export default class ToolbarRenderer {
                     // inject it between the properties and content divs
                     let propsEl = this.ntb.el.getPropsEl(view);
                     if (!propsEl) {
+						// fix: (#464) insert delays in case properties hasn't been rendered in Preview mode yet
+						// for (const delay of [50, 100, 200]) {
+						// 	await sleep(delay);
+						// 	propsEl = this.ntb.el.getPropsEl(view);
+						// 	if (propsEl) break;
+						// }
                         this.ntb.debug("🛑 renderToolbar: Unable to find .metadata-container to insert toolbar");
                     }
                     propsEl?.insertAdjacentElement("afterend", embedBlock);
@@ -362,7 +368,7 @@ export default class ToolbarRenderer {
 
 		let noteToolbarLiArray: HTMLLIElement[] = [];
 
-		const resolvedLabels: string[] = await this.ntb.vars.resolveLabels(toolbar, file);
+		const { resolvedLabels, resolvedTooltips } = await this.ntb.vars.resolveText(toolbar, file);
 
 		for (let i = 0; i < toolbar.items.length; i++) {
 
@@ -415,7 +421,7 @@ export default class ToolbarRenderer {
 					if (!Platform.isPhone) {
 						const itemCommand = this.ntb.commands.getCommandFor(item);
 						let hotkeyText = itemCommand ? this.ntb.hotkeys.getHotkeyText(itemCommand) : undefined;
-						let tooltipText = item.tooltip ? item.tooltip + (hotkeyText ? ` (${hotkeyText})` : '') : hotkeyText || '';
+						let tooltipText = resolvedTooltips[i] ? resolvedTooltips[i] + (hotkeyText ? ` (${hotkeyText})` : '') : hotkeyText || '';
 						if (tooltipText) setTooltip(toolbarItem, tooltipText, { placement: "top" });
 					}
 
@@ -448,14 +454,27 @@ export default class ToolbarRenderer {
 				}
 			}
 
+			// we have a valid item element setup...
 			if (toolbarItem) {
+				// set the element's ID
 				item.uuid ? toolbarItem.id = item.uuid : undefined;
 				toolbarItem.addClass('cg-note-toolbar-item');
-
+				// create its list item container 
 				let noteToolbarLi = activeDocument.createElement("li");
 				noteToolbarLi.dataset.index = i.toString();
+				// set its platform visibility
 				!showOnMobile ? noteToolbarLi.addClass('hide-on-mobile') : false;
 				!showOnDesktop ? noteToolbarLi.addClass('hide-on-desktop') : false;
+				// disable if it's a command that's not available
+				if (item.linkAttr.type === ItemType.Command) {
+					const isCommandAvailable = this.ntb.items.isCommandItemAvailable(item, view);
+					if (!isCommandAvailable) {
+						noteToolbarLi.ariaDisabled = 'true';
+						setTooltip(toolbarItem, t('toolbar.item-unavailable-tooltip'));
+					}
+				}
+
+				// add it to the list container
 				noteToolbarLi.append(toolbarItem);
 				noteToolbarLiArray.push(noteToolbarLi);
 			}
@@ -844,14 +863,18 @@ export default class ToolbarRenderer {
 
 			let itemSetting = this.ntb.settingsManager.getToolbarItemById(itemSpanEl.id);
 			if (itemSetting && itemSpanEl.id === itemSetting.uuid) {
-				const isCommandAvailable = this.ntb.items.isCommandItemAvailable(itemSetting, currentView);
-				if (isCommandAvailable) {
-					itemEl.ariaDisabled = 'false';
-				}
-				else {
-					itemEl.ariaDisabled = 'true';
-					setTooltip(itemSpanEl, t('toolbar.item-unavailable-tooltip'));
-					continue;
+
+				// disable/re-enable any command items based on availability
+				if (itemSetting.linkAttr.type === ItemType.Command) {
+					const isCommandAvailable = this.ntb.items.isCommandItemAvailable(itemSetting, currentView);
+					if (isCommandAvailable) {
+						itemEl.ariaDisabled = 'false';
+					}
+					else {
+						itemEl.ariaDisabled = 'true';
+						setTooltip(itemSpanEl, t('toolbar.item-unavailable-tooltip'));
+						continue;
+					}
 				}
 
 				// update tooltip + label
@@ -1145,7 +1168,7 @@ export default class ToolbarRenderer {
 
 		// remove the existing toolbar because we're likely in a new position
 		if (this.floatingToolbarEl) {
-			this.ntb.debug('♻️ rendering floating toolbar (removing old toolbar)');
+			// this.ntb.debug('♻️ rendering floating toolbar (removing old toolbar)');
 			this.removeFloatingToolbar();
 		}
 

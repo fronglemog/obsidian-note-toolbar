@@ -1,6 +1,6 @@
-import { EditorView, PluginValue, Rect, ViewPlugin, ViewUpdate } from '@codemirror/view';
+import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import NoteToolbarPlugin from 'main';
-import { Notice, Platform } from 'obsidian';
+import { MarkdownView, Notice } from 'obsidian';
 import { PositionType, t } from 'Settings/NoteToolbarSettings';
 
 /**
@@ -40,12 +40,19 @@ export class TextToolbarClass implements PluginValue {
             return;
         };
 
+        // if disabled, do not display for keyboard selections
+        if (!this.ntb.settings.textToolbarOnKeyboard && this.ntb.listeners.document.isKeyboardSelection) {
+            return;
+        }
+
         // don't show toolbar until mouse selection is complete
         if (this.ntb.listeners.document.isMouseDown) {
-            this.ntb.debug('TextToolbar: mousedown - exiting');
-            return;
+            // fix: in source mode the mouse up event doesn't seem to fire after selection
+            const currentView = this.ntb.app.workspace.getActiveViewOfType(MarkdownView);
+            const isSourceMode = currentView?.getState().source;
+            if (!isSourceMode) return;
         };
-
+        
         const { state, view } = update;
 
         const selection = state.selection.main;
@@ -58,14 +65,14 @@ export class TextToolbarClass implements PluginValue {
 
         // right-clicking for some reason selects the current line if it's empty
         if (this.ntb.listeners.document.isContextOpening && this.selection.from === this.selection.from + 1) {
-            this.ntb.debug('TextToolbar: selection is just new line - exiting');
+            // this.ntb.debug('TextToolbar: selection is just new line - exiting');
             this.ntb.listeners.document.isContextOpening = false;
             return;
         }
 
         if (!update.selectionSet) {
             if (this.ntb.render.isFloatingToolbarFocussed()) {
-                this.ntb.debug('TextToolbar: toolbar in focus - exiting');
+                // this.ntb.debug('TextToolbar: toolbar in focus - exiting');
                 return;
             }
             // no text selected, or the view no longer has focus
@@ -80,7 +87,7 @@ export class TextToolbarClass implements PluginValue {
                 }
                 return;
             }
-        };
+        }
 
         if (selection.empty) {
             this.lastSelection = null;
@@ -113,6 +120,7 @@ export class TextToolbarClass implements PluginValue {
             };
 
             // place the toolbar above the cursor, which takes the selection into account
+            this.ntb.debug('🎨 TextToolbar: Rendering toolbar', toolbar.name);
             const cursorPos = this.ntb.utils.getPosition('cursor');
             await this.ntb.render.renderFloatingToolbar(toolbar, cursorPos, PositionType.Text);
 
