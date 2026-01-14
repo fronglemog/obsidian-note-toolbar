@@ -23,6 +23,9 @@ export default class ToolbarRenderer {
 	// floating toolbar element, of which there can be only one
     floatingToolbarEl: HTMLDivElement | null = null;
     
+	// for tracking the last clicked element position (which can include callouts)
+	lastClickedPos: Rect;
+
 	activeViewIds: string[] = []; // track opened views, to reduce unneccesary toolbar re-renders
     isRendering: Record<string, boolean> = {}; // track if a toolbar is being rendered in a view, to prevent >1 event from triggering two renders
 	mobileNavbarMargin: number;
@@ -665,11 +668,11 @@ export default class ToolbarRenderer {
 						// don't show the item if the link has variables and resolves to nothing
 						if (resolveVars && this.ntb.vars.hasVars(toolbarItem.link)) {
 							const resolvedLink = await this.ntb.vars.replaceVars(toolbarItem.link, file);
-							if (resolvedLink === "") break;
+							if (resolvedLink === "") {
+								this.ntb.debug('renderMenuItems: resolved link is empty - skipping');
+								break;
+							};
 						}	
-						// don't show command if not available
-						const isCommandAvailable = this.ntb.items.isCommandItemAvailable(toolbarItem, toolbarView);
-						if (!isCommandAvailable) break;
 
 						menu.addItem((item: MenuItem) => {
 							const itemTitleFr = document.createDocumentFragment();
@@ -696,6 +699,9 @@ export default class ToolbarRenderer {
 										this.ntb.app.workspace.activeEditor?.editor?.focus();
 									}
 								});
+							// disable item if it's not available
+							const isCommandAvailable = this.ntb.items.isCommandItemAvailable(toolbarItem, toolbarView);
+							item.setDisabled(!isCommandAvailable);
 							// set its ID, just for styling purposes
 							item.dom.id = toolbarItem.uuid;
 						});
@@ -799,19 +805,27 @@ export default class ToolbarRenderer {
 
 		// position (and potentially offset) the menu, and then set focus in it if necessary
 		if (menuPos) {
-			menu.showAtPosition(menuPos);
-			if (!menuPos.left) {
-				// reposition if the menu overlaps the right edge
-				let menuOverflow = activeWindow.innerWidth - (menuPos.x + menu.dom.offsetWidth);
-				// not sure why this is close to 2 -- border pixels on either side? is this theme-dependent?
-				if (menuOverflow <= 2) {
-					this.ntb.debug('⬅️ repositioned menu');
-					// show the menu along the right edge of the window instead
-					menu.showAtPosition( { x: activeWindow.innerWidth, y: menuPos.y, overlap: true, left: true } );
-				}
-			}
+			this.showMenuAtPosition(menu, menuPos);
 		}
 
+	}
+
+	/**
+	 * Shows a menu at the given position, but also repositions it if it's too close to the window edge.
+	 */
+	showMenuAtPosition(menu: Menu, position: MenuPositionDef) {
+		menu.showAtPosition(position);
+		// if the menu does not open to the left (=default?)
+		if (!position.left) {
+			// reposition if the menu overlaps the right edge
+			let menuOverflow = activeWindow.innerWidth - (position.x + menu.dom.offsetWidth);
+			// not sure why this is close to 2 -- border pixels on either side? is this theme-dependent?
+			if (menuOverflow <= 2) {
+				this.ntb.debug('⬅️ repositioned menu');
+				// show the menu along the right edge of the window instead
+				menu.showAtPosition( { x: activeWindow.innerWidth, y: position.y, overlap: true, left: true } );
+			}
+		}
 	}
 
 	/**
@@ -1139,6 +1153,7 @@ export default class ToolbarRenderer {
 	 */
 	async removeFloatingToolbar() {
 		this.floatingToolbarEl?.remove();
+		this.floatingToolbarEl = null;
 	}
 
 	/**
@@ -1252,14 +1267,14 @@ export default class ToolbarRenderer {
 	 */
 	removeIfNeeded(correctToolbar: ToolbarSettings | undefined, view?: ItemView): boolean {
 
-		this.ntb.debugGroup('removeToolbarIfNeeded');
+		this.ntb.debugGroup('removeIfNeeded');
 
 		let toolbarRemoved: boolean = false;
 
 		// get toolbar elements in current view, or active view if not provided
 		const existingToolbarEls = this.ntb.el.getAllToolbarEl(view);
 
-		this.ntb.debug("🛑 removeToolbarIfNeeded: correct:", correctToolbar?.name, "existing:", existingToolbarEls);
+		this.ntb.debug("🛑 removeIfNeeded: correct:", correctToolbar?.name, "existing:", existingToolbarEls);
 		if (existingToolbarEls?.length > 0) {
 			// loop over elements and remove any that are not the correct one, ensuring there's only one (or none)
 			existingToolbarEls.forEach((toolbarEl) => {
@@ -1272,7 +1287,7 @@ export default class ToolbarRenderer {
 			this.ntb.debug(existingToolbarEls);
 		}
 		else {
-			this.ntb.debug("⛔️ no existing toolbar");
+			this.ntb.debug("⛔️ removeIfNeeded: no existing toolbar");
 			toolbarRemoved = true;
 		}
 

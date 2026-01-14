@@ -214,14 +214,14 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			});
 		}
 
+		const toolbarListDiv = createDiv();
+		toolbarListDiv.addClass("note-toolbar-setting-toolbar-list");
 		if (this.ntb.settings.toolbars.length == 0) {
-			itemsListContainer
+			toolbarListDiv
 				.createEl("div", { text: emptyMessageFr(t('setting.toolbars.label-empty-create-tbar')) })
 				.className = "note-toolbar-setting-empty-message";
 		}
 		else {
-			const toolbarListDiv = createDiv();
-			toolbarListDiv.addClass("note-toolbar-setting-toolbar-list");
 			this.ntb.settings.toolbars.forEach(
 				(toolbar) => {
 					
@@ -388,11 +388,9 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 					}
 				}
 			);
-
-			itemsListContainer.appendChild(toolbarListDiv);
-
 		}
-
+		
+		itemsListContainer.appendChild(toolbarListDiv);
 		itemsContainer.appendChild(itemsListContainer);
 
 		// add toolbar
@@ -638,7 +636,7 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			itemsContainerEl.addClass('note-toolbar-setting-items-list-container');
 
 			if (this.ntb.settings.folderMappings.length == 0) {
-				containerEl
+				itemsContainerEl
 					.createEl("div", { text: emptyMessageFr(t('setting.mappings.label-empty')) })
 					.className = "note-toolbar-setting-empty-message";
 			}
@@ -668,10 +666,10 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 					}
 				});
 
-				itemsContainerEl.appendChild(toolbarFolderListEl)
-				settingItemsEl.appendChild(itemsContainerEl);
-
+				itemsContainerEl.appendChild(toolbarFolderListEl);
 			}
+			
+			settingItemsEl.appendChild(itemsContainerEl);
 
 		//
 		// "Add a new mapping" button
