@@ -22,7 +22,9 @@ export default class ToolbarRenderer {
 
 	// floating toolbar element, of which there can be only one
     floatingToolbarEl: HTMLDivElement | null = null;
-    
+
+	phoneTbarPosition: PositionType | null = null;
+
 	// for tracking the last clicked element position (which can include callouts)
 	lastClickedPos: Rect;
 
@@ -131,6 +133,7 @@ export default class ToolbarRenderer {
         Platform.isMobile
             ? position = toolbar.position.mobile?.allViews?.position ?? PositionType.Props
             : position = toolbar.position.desktop?.allViews?.position ?? PositionType.Props;
+		if (Platform.isPhone) this.phoneTbarPosition = position;
 
         // if no view is provided, get the active view
         if (!view) view = this.ntb.app.workspace.getActiveViewOfType(MarkdownView) ?? undefined;
@@ -289,7 +292,7 @@ export default class ToolbarRenderer {
                 break;
         }
 
-        this.ntb.debug(`⭐️ Rendered: ${toolbar.name} in view:`, getViewId(view));
+        this.ntb.debug(`🎨 Rendered toolbar: "${toolbar.name}" in view:`, getViewId(view));
         this.ntb.debugGroupEnd();
 
     }
@@ -306,6 +309,11 @@ export default class ToolbarRenderer {
         /* create the unordered list of menu items */
         let noteToolbarUl = activeDocument.createElement("ul");
         noteToolbarUl.setAttribute("role", "menu");
+
+		// don't open the sidebars if the toolbar is not wrapping items
+		if (Platform.isMobile && toolbar.mobileStyles.includes(MobileStyleType.NoWrap)) {
+			noteToolbarUl.setAttribute('data-ignore-swipe', 'true');
+		}
 
         let noteToolbarLiArray = await this.renderLItems(toolbar, file, view);
         noteToolbarUl.append(...noteToolbarLiArray);
@@ -473,7 +481,10 @@ export default class ToolbarRenderer {
 					const isCommandAvailable = this.ntb.items.isCommandItemAvailable(item, view);
 					if (!isCommandAvailable) {
 						noteToolbarLi.ariaDisabled = 'true';
-						setTooltip(toolbarItem, t('toolbar.item-unavailable-tooltip'));
+						setTooltip(
+							toolbarItem, 
+							item.tooltip ? `${item.tooltip} (${t('toolbar.item-unavailable-tooltip')})` : t('toolbar.item-unavailable-tooltip')
+						);
 					}
 				}
 
@@ -718,7 +729,12 @@ export default class ToolbarRenderer {
 	 */
 	async renderForView(view?: ItemView) {
 
-		const toolbarView = view ? view : this.ntb.app.workspace.getActiveViewOfType(ItemView);
+		let toolbarView = view ? view : this.ntb.app.workspace.getActiveViewOfType(ItemView);
+		// fix: if Backlinks was previously open it becomes an active view, so fall back to most recent
+		if (!toolbarView && Platform.isPhone) {
+			const leaf = this.ntb.app.workspace.getMostRecentLeaf();
+			toolbarView = (leaf?.view instanceof ItemView) ? leaf.view : null;
+		}
 
 		let activeFile: TFile | null = null;
 		if (!toolbarView) return;
@@ -743,9 +759,11 @@ export default class ToolbarRenderer {
 				const toolbarRemoved = this.removeIfNeeded(toolbar, toolbarView);
 				if (toolbar) {
 					// render the toolbar if we have one, and we don't have an existing toolbar to keep
-					if (toolbarRemoved) {
+					if (Platform.isPhone || toolbarRemoved) {
+						this.ntb.debug('renderForView: rendering...');
 						await this.render(toolbar, null, toolbarView);	
 					}
+					this.ntb.debug('renderForView: updating...');
 					await this.update(toolbar, null, toolbarView);
 				}
 			}
@@ -878,23 +896,11 @@ export default class ToolbarRenderer {
 			let itemSetting = this.ntb.settingsManager.getToolbarItemById(itemSpanEl.id);
 			if (itemSetting && itemSpanEl.id === itemSetting.uuid) {
 
-				// disable/re-enable any command items based on availability
-				if (itemSetting.linkAttr.type === ItemType.Command) {
-					const isCommandAvailable = this.ntb.items.isCommandItemAvailable(itemSetting, currentView);
-					if (isCommandAvailable) {
-						itemEl.ariaDisabled = 'false';
-					}
-					else {
-						itemEl.ariaDisabled = 'true';
-						setTooltip(itemSpanEl, t('toolbar.item-unavailable-tooltip'));
-						continue;
-					}
-				}
-
 				// update tooltip + label
+				let itemTooltip = itemSetting.tooltip;
 				if (this.ntb.vars.hasVars(itemSetting.tooltip)) {
-					let newTooltip = await this.ntb.vars.replaceVars(itemSetting.tooltip, activeFile);
-					setTooltip(itemSpanEl, newTooltip, { placement: "top" });
+					itemTooltip = await this.ntb.vars.replaceVars(itemSetting.tooltip, activeFile);
+					setTooltip(itemSpanEl, itemTooltip, { placement: "top" });
 				}
 				if (this.ntb.vars.hasVars(itemSetting.label)) {
 					let newLabel = await this.ntb.vars.replaceVars(itemSetting.label, activeFile);
@@ -906,6 +912,22 @@ export default class ToolbarRenderer {
 					else {
 						itemElLabel?.addClass('hide');
 						itemElLabel?.setText('');
+					}
+				}
+
+				// disable/re-enable any command items based on availability
+				if (itemSetting.linkAttr.type === ItemType.Command) {
+					const isCommandAvailable = this.ntb.items.isCommandItemAvailable(itemSetting, currentView);
+					if (isCommandAvailable) {
+						itemEl.ariaDisabled = 'false';
+					}
+					else {
+						itemEl.ariaDisabled = 'true';
+						setTooltip(
+							itemSpanEl, 
+							itemTooltip ? `${itemTooltip} (${t('toolbar.item-unavailable-tooltip')})` : t('toolbar.item-unavailable-tooltip')
+						);
+						continue;
 					}
 				}
 
@@ -935,9 +957,7 @@ export default class ToolbarRenderer {
 			this.renderBottomToolbarStyles(toolbar, toolbarEl);
 		}
 
-		if (currentPosition === PositionType.Bottom || currentPosition === PositionType.Top) {
-			this.updatePhoneNavigation(currentPosition, toolbarEl.offsetHeight);
-		}
+		this.updatePhoneNavigation(currentPosition, toolbarEl.offsetHeight);
 
 		this.ntb.debugGroupEnd();
 
@@ -969,9 +989,9 @@ export default class ToolbarRenderer {
 	 * @param toolbarPosition position of current toolbar.
 	 * @param toolbarHeight height of the current toolbar.
 	 */ 
-	updatePhoneNavigation(toolbarPosition: PositionType, toolbarHeight: number): void {
+	updatePhoneNavigation(toolbarPosition: PositionType | undefined, toolbarHeight: number): void {
 
-		if (!Platform.isPhone) return;
+		if (!Platform.isPhone || !toolbarPosition) return;
 
 		// position Obsidian Navbar above toolbar
 		const mobileNavbarEl = activeDocument.querySelector('.mobile-navbar') as HTMLElement;
@@ -1040,7 +1060,7 @@ export default class ToolbarRenderer {
 			const allHidden = allNavbarKeys.every(key => 
 				uiElementsVisibility.get(key) === false
 			);
-			navbarEl.toggleClass('note-toolbar-hidden', allHidden);
+			activeDocument.body.toggleClass('ntb-remove-nav', allHidden);
 
 			// hide items individually if not all are hidden
 			if (!allHidden) {
@@ -1048,7 +1068,7 @@ export default class ToolbarRenderer {
 					const elDefinition = uiElements.get(key);
 					if (!elDefinition) return;
 					const elToHide = navbarEl.querySelector(elDefinition.selector) as HTMLElement;
-					if (elToHide) elToHide.toggleClass('note-toolbar-hidden', !visible);
+					if (elToHide) elToHide.toggleClass('ntb-hidden', !visible);
 				});
 			}
 		}
@@ -1064,12 +1084,12 @@ export default class ToolbarRenderer {
 	 */
 	async checkAndRender(file: TFile, frontmatter: FrontMatterCache | undefined, view?: ItemView): Promise<void> {
 
-		this.ntb.debug('checkAndRenderToolbar: file:', file.name, 'view:', getViewId(view));
+		this.ntb.debug('checkAndRender: file:', file.name, 'view:', getViewId(view));
 
 		const viewId = getViewId(view);
 		if (viewId) {	
 			if (this.isRendering[viewId]) {
-				this.ntb.debug('checkAndRenderToolbar: SKIPPED: ALREADY RENDERING', viewId);
+				this.ntb.debug('checkAndRender: SKIPPED: ALREADY RENDERING', viewId);
 				return;
 			};
 			this.isRendering[viewId] = true;
@@ -1083,7 +1103,7 @@ export default class ToolbarRenderer {
 			// remove existing toolbar if needed
 			let toolbarRemoved: boolean = this.removeIfNeeded(matchingToolbar, view);
 
-			this.ntb.debug('checkAndRenderToolbar:', matchingToolbar?.name);
+			this.ntb.debug('checkAndRender:', matchingToolbar?.name);
 
 			if (matchingToolbar) {
 				// render the toolbar if we have one, and we don't have an existing toolbar to keep
@@ -1274,26 +1294,31 @@ export default class ToolbarRenderer {
 		// get toolbar elements in current view, or active view if not provided
 		const existingToolbarEls = this.ntb.el.getAllToolbarEl(view);
 
-		this.ntb.debug("🛑 removeIfNeeded: correct:", correctToolbar?.name, "existing:", existingToolbarEls);
+		this.ntb.debug("removeIfNeeded: correct:", correctToolbar?.name);
 		if (existingToolbarEls?.length > 0) {
-			// loop over elements and remove any that are not the correct one, ensuring there's only one (or none)
-			existingToolbarEls.forEach((toolbarEl) => {
-				if (toolbarRemoved) toolbarEl.remove() // remove any other toolbar elements
-				else {
-					toolbarRemoved = this.checkRemoveToolbarEl(correctToolbar, toolbarEl as HTMLElement, view);
-					if (toolbarRemoved) toolbarEl.remove();
-				}
-			});
-			this.ntb.debug(existingToolbarEls);
+			// remove everything on phones
+			if (Platform.isPhone) {
+				existingToolbarEls.forEach((toolbarEl) => toolbarEl.remove());
+				toolbarRemoved = true;
+			}
+			// otherwise, loop over elements and remove any that are not the correct one, ensuring there's only one (or none)
+			else {
+				existingToolbarEls.forEach((toolbarEl) => {
+					if (toolbarRemoved) toolbarEl.remove() // remove any other toolbar elements
+					else {
+						toolbarRemoved = this.checkRemoveToolbarEl(correctToolbar, toolbarEl as HTMLElement, view);
+						if (toolbarRemoved) toolbarEl.remove();
+					}
+				});
+			}
 		}
 		else {
-			this.ntb.debug("⛔️ removeIfNeeded: no existing toolbar");
+			this.ntb.debug("removeIfNeeded: no existing toolbar");
 			toolbarRemoved = true;
 		}
 
 		this.ntb.debugGroupEnd();
 		return toolbarRemoved;
-
 	}
 
 	private checkRemoveToolbarEl(correctToolbar: ToolbarSettings | undefined, existingToolbarEl: HTMLElement, view?: ItemView): boolean {
@@ -1315,7 +1340,7 @@ export default class ToolbarRenderer {
 		}
 		// we need a toolbar BUT the name of the existing toolbar doesn't match
 		else if (correctToolbar.name !== existingToolbarName) {
-			this.ntb.debug("⛔️ removing existing toolbar (name does not match): " + existingToolbarName);
+			this.ntb.debug('⛔️ removing existing toolbar (name does not match) correct:"', correctToolbar.name, '" existing: "', existingToolbarName, '"');
 			removeToolbar = true;
 		}
 		// we need a toolbar BUT it needs to be updated

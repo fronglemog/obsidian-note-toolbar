@@ -63,11 +63,7 @@ const itemEl = activeDocument.getElementById('112c7ed3-d5c2-4750-b95d-75bc84e235
 
 > **app**: `App`
 
-The Obsidian app instance. Use this instead of the global `app` when writing JavaScript.
-
-#### See
-
-https://docs.obsidian.md/Reference/TypeScript+API/App
+The [Obsidian app instance](https://docs.obsidian.md/Reference/TypeScript+API/App). Use this instead of the global `app` when writing JavaScript.
 
 #### Example
 
@@ -130,7 +126,7 @@ Shows a file suggester modal and waits for the user's selection.
 
 `Promise`\<`TAbstractFile` \| `null`\>
 
-The selected `TAbstractFile`.
+The selected [TAbstractFile](https://docs.obsidian.md/Reference/TypeScript+API/TAbstractFile).
 
 #### Example
 
@@ -361,11 +357,7 @@ else {
 
 > **o**: `__module`
 
-Reference to the Obsidian API module for accessing Obsidian classes and utilities from scripts.
-
-#### See
-
-https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts
+Reference to the [Obsidian API module](https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts) for accessing Obsidian classes and utilities from scripts.
 
 #### Example
 

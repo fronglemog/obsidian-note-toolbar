@@ -1,4 +1,5 @@
 import NoteToolbarPlugin from "main";
+import { Platform } from "obsidian";
 import { PositionType } from "Settings/NoteToolbarSettings";
 
 
@@ -27,6 +28,15 @@ export default class DocumentListeners {
         this.ntb.registerDomEvent(activeDocument, 'mouseup', this.onMouseUp);
         this.ntb.registerDomEvent(activeDocument, 'mousedown', this.onMouseDown);
         this.ntb.registerDomEvent(activeDocument, 'selectionchange', this.onSelectionChange);
+
+        if (Platform.isPhone) {
+            const container = activeDocument.querySelector('.app-container');
+            if (container) {
+                const observer = new ResizeObserver(this.onAppResize);
+                observer.observe(container);
+                this.ntb.register(() => observer.disconnect());
+            }
+        }
     }
 
     onContextMenu = () => {
@@ -50,7 +60,12 @@ export default class DocumentListeners {
     }
     
     onMouseDown = (event: MouseEvent) => {
-        // this.ntb.debug('onMouseDown', event.target);
+        // prevent phone Navbar from appearing when tapping items, for bottom toolbars
+        if (Platform.isPhone && this.ntb.render.phoneTbarPosition === PositionType.Bottom) {
+            const target = event.target as HTMLElement;
+            const isToolbar = (target.closest('.cg-note-toolbar-container') !== null);
+            if (isToolbar) event.stopPropagation();
+        }
         this.isKeyboardSelection = false;
         this.isMouseDown = true;
         // TODO? dismiss floating toolbar if click is not inside a floating toolbar? (or its menus, etc?)
@@ -92,6 +107,18 @@ export default class DocumentListeners {
     onSelectionChange = (event: any) => {
         // this.ntb.debug('onSelection');
         this.updatePreviewSelection();
+    }
+
+    /**
+     * Adds a class to the body if the keyboard is showing, on phones.
+     */
+    onAppResize = () => {
+        if (Platform.isPhone) {
+            const height = getComputedStyle(activeDocument.documentElement).getPropertyValue('--keyboard-height');
+            const keyboardHeight = parseFloat(height) || 0;
+            const isKeyboardOpen = keyboardHeight > 0;
+            activeDocument.body.classList.toggle('ntb-is-keyboard-open', isKeyboardOpen);
+        }
     }
 
     /**

@@ -63,8 +63,7 @@ export default interface INoteToolbarApi<T> {
     // testCallback: (buttonId: string, callback: Callback) => Promise<void>;
 
     /**
-     * The Obsidian app instance. Use this instead of the global `app` when writing JavaScript.
-     * @see https://docs.obsidian.md/Reference/TypeScript+API/App
+     * The [Obsidian app instance](https://docs.obsidian.md/Reference/TypeScript+API/App). Use this instead of the global `app` when writing JavaScript.
      * 
      * @example
      * const currentFile = ntb.app.workspace.getActiveFile();
@@ -91,7 +90,7 @@ export default interface INoteToolbarApi<T> {
      * Shows a file suggester modal and waits for the user's selection.
      * 
      * @param options Optional display options.
-     * @returns The selected `TAbstractFile`.
+     * @returns The selected [TAbstractFile](https://docs.obsidian.md/Reference/TypeScript+API/TAbstractFile).
      * 
      * @example
      * const fileOrFolder = await ntb.fileSuggester();
@@ -220,8 +219,7 @@ export default interface INoteToolbarApi<T> {
     modal: (content: string | TFile, options?: NtbModalOptions) => Promise<Modal>;
 
     /**
-     * Reference to the Obsidian API module for accessing Obsidian classes and utilities from scripts.
-     * @see https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts
+     * Reference to the [Obsidian API module](https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts) for accessing Obsidian classes and utilities from scripts.
      * 
      * @example
      * // get the current markdown view

@@ -37,9 +37,8 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 		private ntb: NoteToolbarPlugin
 	) {
 		super(ntb.app, ntb);
-		// TODO: use the user-configured icon with this fallback
-		// TODO: update icon when setting changes
-		this.icon = 'circle-ellipsis';
+		// TODO? add back in when more plugins have icons
+		// this.icon = 'circle-ellipsis';
 		// this.ruleUi = new RuleUi(this.plugin, this);
 	}
 
@@ -1499,6 +1498,28 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 				.filter(([key]) => key.startsWith('mobile.navbar.'))
 		);
 
+		// check if all actions are hidden
+		const allNavbarKeys = Array.from(
+			obsidianUiEls.keys()).filter(key => key.startsWith('mobile.navbar.')
+		);
+		const allHidden = allNavbarKeys.every(key => 
+			obsidianUiSetting.get(key) === false
+		);
+
+		// toggle to hide/unhide all actions
+		menu.addItem((menuItem: MenuItem) => {
+			menuItem
+				.setTitle(allHidden ? t('setting.other.navbar-visibility.option-unhide-all') : t('setting.other.navbar-visibility.option-hide-all'))
+				.onClick(async (menuEvent) => { 
+					allNavbarKeys.forEach((key) => {
+						this.ntb.settings.obsidianUiVisibility[key] = allHidden ? true : false;
+					});
+					await this.ntb.settingsManager.save();
+				});
+		});
+		menu.addSeparator();
+
+		// toggle for each action
 		OBSIDIAN_UI_MOBILE_NAVBAR_OPTIONS.forEach((key) => {
 			const uiEl = obsidianUiEls.get(key);
 			if (uiEl) {

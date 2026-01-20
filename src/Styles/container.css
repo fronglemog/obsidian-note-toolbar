@@ -60,10 +60,11 @@
                 .is-hidden-nav & {
                     margin-bottom: var(--cg-nt-tbar-bottom-margin-bottom-phone);
                 }
-            }
-            /* fix: bottom margin needs to be removed when keyboard is open on phone */
-            .is-phone.mod-toolbar-open & {
-                margin-bottom: unset;
+                /* fix: bottom margin needs to be removed when keyboard is open on phone */
+                .ntb-is-keyboard-open & {
+                    margin-bottom: unset;
+                    transition: unset;
+                }
             }
         }
 
@@ -128,6 +129,19 @@
             }
         }
     }
+}
+
+/* if Navbar is completely hidden by Note Toolbar, don't shift bottom toolbars */
+.is-phone.ntb-remove-nav .cg-note-toolbar-container[data-tbar-position*="bottom"] {
+    & .cg-note-toolbar-callout {
+        margin-bottom: var(--cg-nt-tbar-bottom-margin-bottom-phone);
+    }
+}
+
+/* hides the FAB when a sidebar is open on phones */
+.is-phone .app-container:has(.workspace.is-left-sidedock-open) .cg-note-toolbar-container[data-tbar-position*="fab"],
+.is-phone .app-container:has(.workspace.is-right-sidedock-open) .cg-note-toolbar-container[data-tbar-position*="fab"] {
+    display: none;
 }
 
 /* remove spacing after props section, only if toolbar is in props position */
