@@ -28,15 +28,6 @@ export default class DocumentListeners {
         this.ntb.registerDomEvent(activeDocument, 'mouseup', this.onMouseUp);
         this.ntb.registerDomEvent(activeDocument, 'mousedown', this.onMouseDown);
         this.ntb.registerDomEvent(activeDocument, 'selectionchange', this.onSelectionChange);
-
-        if (Platform.isPhone) {
-            const container = activeDocument.querySelector('.app-container');
-            if (container) {
-                const observer = new ResizeObserver(this.onAppResize);
-                observer.observe(container);
-                this.ntb.register(() => observer.disconnect());
-            }
-        }
     }
 
     onContextMenu = () => {
@@ -107,18 +98,6 @@ export default class DocumentListeners {
     onSelectionChange = (event: any) => {
         // this.ntb.debug('onSelection');
         this.updatePreviewSelection();
-    }
-
-    /**
-     * Adds a class to the body if the keyboard is showing, on phones.
-     */
-    onAppResize = () => {
-        if (Platform.isPhone) {
-            const height = getComputedStyle(activeDocument.documentElement).getPropertyValue('--keyboard-height');
-            const keyboardHeight = parseFloat(height) || 0;
-            const isKeyboardOpen = keyboardHeight > 0;
-            activeDocument.body.classList.toggle('ntb-is-keyboard-open', isKeyboardOpen);
-        }
     }
 
     /**

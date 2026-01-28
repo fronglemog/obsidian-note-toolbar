@@ -164,6 +164,12 @@ settings:
         default: 24
         format: px
     -
+        id: cg-nt-fab-z-index
+        title: 'Z-index'
+        description: "Controls stacking order relative to other elements. Increase if the button appears behind other components, or decrease if it covers them."
+        type: variable-number
+        default: 44
+    -
         id: toolbar-fab-sizing-spacing
         title: '↳ 📐 Sizing and Spacing'
         title.uk: '↳ 📐 Розміри та інтервали'
@@ -843,11 +849,17 @@ settings:
         title.zh: '移动端顶部 Sticky 附着的偏移量（单位：rem）📱'
         description: 'See above.'
         description.uk: 'Дивіться вище.'
-        description.de: Siehe oben.
+        description.de: 'Siehe oben.'
         description.zh: '参见上面的说明。'
         type: variable-number
         default: -0.5
         format: rem
+    -
+        id: cg-nt-tbar-z-index
+        title: 'Z-index'
+        description: "Controls stacking order relative to other elements. Increase if bottom or top-positioned toolbars appear behind other components, or decrease if it covers them."
+        type: variable-number
+        default: 44
     -
         id: toolbar-sizing-spacing
         title: '↳ 📐 Sizing and Spacing'
@@ -879,6 +891,13 @@ settings:
         type: variable-number
         default: 0
         format: em
+    -
+        id: cg-nt-tbar-top-padding-x-mobile
+        title: 'Top toolbar horizontal padding on mobile (in px units) 📱'
+        description: 'Horizontal spacing around top-positioned toolbars.'
+        type: variable-number
+        default: 12
+        format: px
     -
         id: toolbar-styles
         title: '↳ 😎 Style'
@@ -1011,7 +1030,7 @@ settings:
         description.zh: '工具栏周围的间距。'
         description.uk: 'Проміжки навколо панелі.'
         type: variable-number
-        default: 24
+        default: 12
         format: px
     -
         id: toolbar-bottom-styles
@@ -1035,7 +1054,7 @@ settings:
         format: px
     -
         id: toolbar-text-tbar
-        title: 'Toolbars (text)'
+        title: 'Toolbars (floating)'
         title.zh: '工具栏（文本）'
         description: 'Styles for floating toolbars (including text toolbars)'
         description.zh: '文本工具栏的样式'
@@ -1110,6 +1129,21 @@ settings:
         format: hex
         default-light: '#'
         default-dark: '#'
+    -
+        id: toolbar-text-positioning
+        title: '↳ ↕ Positioning'
+        title.uk: '↳ ↕ Позиціонування'
+        title.de: '↳ ↕ Positionierung'
+        title.zh: '↳ ↕ 位置'
+        type: heading
+        level: 2
+        collapsed: true
+    -
+        id: cg-nt-tbar-text-z-index
+        title: 'Z-index'
+        description: "Controls stacking order relative to other elements. Increase if floating toolbars appear behind other components, or decrease if it covers them."
+        type: variable-number
+        default: 44
     -
         id: tbar-text-item-sizing-spacing
         title: '↳ 📐 Sizing and Spacing'

@@ -29,8 +29,7 @@
         padding: var(--file-margins);
         padding-bottom: 0;
         padding-top: 0;
-        /* fix: puts toolbar above popovers + Hover Editor plugin */
-        z-index: calc(var(--layer-slides) - 1);
+        z-index: var(--cg-nt-tbar-z-index);
         &:hover {
             /* undoes fix (#14) which causes a layout shift on hover */
             overflow: visible !important;
@@ -60,11 +59,11 @@
                 .is-hidden-nav & {
                     margin-bottom: var(--cg-nt-tbar-bottom-margin-bottom-phone);
                 }
-                /* fix: bottom margin needs to be removed when keyboard is open on phone */
-                .ntb-is-keyboard-open & {
-                    margin-bottom: unset;
-                    transition: unset;
-                }
+            }
+            /* fix: bottom margin needs to be removed when keyboard is open on phone */
+            .is-phone.ntb-is-keyboard-open & {
+                margin-bottom: unset !important;
+                transition: unset !important;
             }
         }
 
@@ -81,6 +80,12 @@
         }
     }
 
+    &[data-tbar-position="top"] {
+        .is-mobile & {
+            padding-inline: var(--cg-nt-tbar-top-padding-x-mobile);
+        }
+    }
+
     &[data-tbar-position="float"], &[data-tbar-position="text"] {
         border-radius: var(--cg-nt-tbar-text-border-radius);
         box-shadow: var(--cg-nt-tbar-text-shadow);
@@ -93,7 +98,7 @@
             max-width: var(--cg-nt-tbar-text-max-width-phone);
         }
         /* fix: puts toolbar above popovers + Hover Editor plugin */
-        z-index: calc(var(--layer-slides) - 1);
+        z-index: var(--cg-nt-tbar-text-z-index);
         & .cg-note-toolbar-callout {
             margin-bottom: 0;
             & a, span.external-link {
@@ -128,6 +133,17 @@
                 }
             }
         }
+    }
+}
+
+.is-phone .cg-note-toolbar-container[data-tbar-position*="bottom"] {
+    /* if toolbar doesn't wrap, container needs a constrained width so it's scrollable */
+    &:has(.cg-note-toolbar-callout[data-callout-metadata*="mnwrp"]) {
+        max-width: 100%;
+    }
+    /* reduce padding to better align with formatting toolbar */
+    .ntb-is-keyboard-open & {
+        padding-inline: 0;
     }
 }
 
