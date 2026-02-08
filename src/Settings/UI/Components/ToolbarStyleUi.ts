@@ -2,9 +2,9 @@ import { DEFAULT_STYLE_DISCLAIMERS, DEFAULT_STYLE_OPTIONS, MOBILE_STYLE_DISCLAIM
 import { arraymove } from "Utils/Utils";
 import NoteToolbarPlugin from "main";
 import { debounce, ItemView, MarkdownView, Setting, SettingGroup } from "obsidian";
-import StyleModal from "./Modals/StyleModal";
-import ToolbarSettingsModal from "./Modals/ToolbarSettingsModal";
-import { emptyMessageFr, getDisclaimersFr, getValueForKey, learnMoreFr } from "./Utils/SettingsUIUtils";
+import StyleModal from "../Modals/StyleModal";
+import ToolbarSettingsModal from "../Modals/ToolbarSettingsModal";
+import { emptyMessageFr, getDisclaimersFr, getValueForKey, learnMoreFr } from "../Utils/SettingsUIUtils";
 
 export default class ToolbarStyleUi {
 
@@ -38,7 +38,7 @@ export default class ToolbarStyleUi {
 
         if (this.toolbar.defaultStyles.length == 0) {
             let emptyMsg = this.parent.containerEl.createEl("div", 
-                { text: emptyMessageFr(t('setting.styles.option-default-empty')) });
+                { text: emptyMessageFr(this.ntb, t('setting.styles.option-default-empty')) });
             emptyMsg.className = "note-toolbar-setting-empty-message";
             defaultStyleDiv.append(emptyMsg);
         }
@@ -116,7 +116,7 @@ export default class ToolbarStyleUi {
 
         if (this.toolbar.mobileStyles.length == 0) {
             let emptyMsg = this.parent.containerEl.createEl("div", 
-                { text: emptyMessageFr(t('setting.styles.option-mobile-empty')) });
+                { text: emptyMessageFr(this.ntb, t('setting.styles.option-mobile-empty')) });
             emptyMsg.className = "note-toolbar-setting-empty-message";
             mobileStyleDiv.append(emptyMsg);
         }
@@ -239,8 +239,9 @@ export default class ToolbarStyleUi {
     getExcludedMobileStyles(): string[] {
         const excludedStyles: string[] = [];
         
-        if (this.toolbar.position.mobile?.allViews?.position !== PositionType.Top) excludedStyles.push('mnwd', 'mwd');
-        if (this.toolbar.position.mobile?.allViews?.position !== PositionType.Props) excludedStyles.push('mstcky', 'mnstcky');
+        const position: PositionType | undefined = this.toolbar.position.mobile?.allViews?.position;
+        if (position !== PositionType.Top && position !== PositionType.Bottom) excludedStyles.push('mnwd', 'mwd');
+        if (position !== PositionType.Props) excludedStyles.push('mstcky', 'mnstcky');
 
         if (this.isUsingLaunchpad()) {
             excludedStyles.push('mctr', 'mlft', 'mrght', 'mbtwn', 'mevn', 'mstcky', 'mnstcky', 'mntb', 'mnwrp', 'mtb');

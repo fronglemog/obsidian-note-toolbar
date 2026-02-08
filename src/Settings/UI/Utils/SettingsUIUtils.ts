@@ -1,5 +1,5 @@
 import NoteToolbarPlugin from "main";
-import { ButtonComponent, getIcon, Notice, Platform, setIcon, Setting, setTooltip, TFile, TFolder } from "obsidian";
+import { ButtonComponent, getIcon, Notice, Platform, setIcon, Setting, setTooltip, TFile, TFolder, ToggleComponent } from "obsidian";
 import { COMMAND_DOES_NOT_EXIST, DEFAULT_ITEM_VISIBILITY_SETTINGS, IGNORE_PLUGIN_IDS, ItemType, ScriptConfig, SettingType, t, ToolbarItemSettings, ToolbarSettings, URL_RELEASES, URL_USER_GUIDE, VIEW_TYPE_GALLERY, VIEW_TYPE_HELP, VIEW_TYPE_WHATS_NEW, WHATSNEW_VERSION } from "Settings/NoteToolbarSettings";
 import SettingsManager from "Settings/SettingsManager";
 import { importArgs } from "Utils/Utils";
@@ -73,7 +73,7 @@ export function createToolbarPreviewFr(
 
 				// ignore all empty toolbar items (no label or icon)
 				return ((item.label === "" && item.icon === "" && 
-					![ItemType.Break, ItemType.Group, ItemType.Separator].includes(item.linkAttr.type)) ? false : true);
+					![ItemType.Break, ItemType.Group, ItemType.Separator, ItemType.Spreader].includes(item.linkAttr.type)) ? false : true);
 	 
 			})
 			.map(item => {
@@ -81,6 +81,7 @@ export function createToolbarPreviewFr(
 				switch (item.linkAttr.type) {
 					case ItemType.Break:
 					case ItemType.Separator:
+					case ItemType.Spreader:
 						break;
 					case ItemType.Group:
 						if (settingsManager) {
@@ -129,7 +130,7 @@ export function createToolbarPreviewFr(
 			});
 	}
 	else {
-		itemsFr.appendChild(emptyMessageFr(t('setting.item.label-preview-empty-no-items')));
+		itemsFr.appendChild(emptyMessageFr(ntb, t('setting.item.label-preview-empty-no-items')));
 	}
 	previewContainer.appendChild(itemsFr);
 
@@ -238,12 +239,31 @@ export function displayHelpSection(ntb: NoteToolbarPlugin, settingsDiv: HTMLElem
  * @param message Message to return as a fragment.
  * @returns DocumentFragment containing the message and styling.
  */
-export function emptyMessageFr(message: string): DocumentFragment {
+export function emptyMessageFr(ntb: NoteToolbarPlugin, message: string, linkText?: string, linkCallback?: () => void): DocumentFragment {
+
 	let messageFr = document.createDocumentFragment();
 	let messageFrText = document.createElement("i");
 	messageFrText.textContent = message;
 	messageFr.append(messageFrText);
+
+	if (linkText && linkCallback) {
+		messageFr.append('\u00A0');
+		const createLinkEl = messageFr.createEl('a', { href: '#', text: linkText });
+		createLinkEl.addClass('note-toolbar-setting-focussable-link');
+		ntb.registerDomEvent(createLinkEl, 'click', linkCallback);
+		handleKeyClick(ntb, createLinkEl);
+	}
+
 	return messageFr;
+}
+
+/**
+ * This is to fix a bug with Obsidian where toggle component labels can be tabbed into. #501
+ * @param toggle ToggleComponent
+ * @see https://discord.com/channels/686053708261228577/716028884885307432/1454335099545059389
+ */
+export function fixToggleTab(toggle: ToggleComponent) {
+	toggle.toggleEl.tabIndex = -1;
 }
 
 /**
@@ -420,6 +440,13 @@ export function openItemSuggestModal(
 
 			const isEmptyItem = selectedItem.uuid === 'NEW_ITEM';
 			if (isEmptyItem) selectedItem.label = '';
+			if (isEmptyItem && parent) {
+				const itemContainer = parent.contentEl.querySelector('.note-toolbar-sortablejs-list') as HTMLElement;
+				if (itemContainer) {
+					await parent.itemListUi.addItemHandler(selectedItem.linkAttr.type, itemContainer);
+					return;
+				}
+			}
 
 			let newItem = await ntb.settingsManager.duplicateToolbarItem(toolbar, selectedItem, toolbarInsertIndex);
 			// reset the visibility setting, as there's no prior indication to the user as to its visibility

@@ -47,6 +47,9 @@ export default defineConfig([
 				Object.keys(tsPlugin.rules).map(r => [`@typescript-eslint/${r}`, "off"])
 			),
 
+			"no-console": ["warn", { "allow": ["warn", "error"] }],
+			"no-debugger": "warn",
+			
 			"@typescript-eslint/no-invalid-this": "error",
 
 			// for support of older versions of iOS (15 and earlier)
@@ -62,7 +65,7 @@ export default defineConfig([
 			// Catches promises that should be awaited (prevents unhandled rejections)
 			// "@typescript-eslint/no-floating-promises": "error",
 			// Prevents creating functions inside loops (new function instance each iteration)
-			// "@typescript-eslint/no-loop-func": "error",
+			"@typescript-eslint/no-loop-func": "error",
  
 			// PERFORMANCE
 			// Prevents unnecessary async/await overhead

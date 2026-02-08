@@ -11,7 +11,7 @@ import { arraymove, getElementPosition, moveElement } from 'Utils/Utils';
 import { confirmWithModal } from './Modals/ConfirmModal';
 import { importFromModal } from './Modals/ImportModal';
 import ShareModal from './Modals/ShareModal';
-import { createToolbarPreviewFr, displayHelpSection, emptyMessageFr, handleKeyClick, iconTextFr, learnMoreFr, removeFieldHelp, setFieldHelp, showWhatsNewIfNeeded, updateItemComponentStatus } from "./Utils/SettingsUIUtils";
+import { createToolbarPreviewFr, displayHelpSection, emptyMessageFr, fixToggleTab, handleKeyClick, iconTextFr, learnMoreFr, removeFieldHelp, setFieldHelp, showWhatsNewIfNeeded, updateItemComponentStatus } from "./Utils/SettingsUIUtils";
 // import RuleUi from './RuleUi';
 
 type SettingsSectionType = 'appToolbars' | 'callouts' | 'contexts' | 'displayRules' | 'itemList';
@@ -112,7 +112,7 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 				focusEl?.focus();
 				if (scrollToFocus) {
 					setTimeout(() => { 
-						focusEl?.scrollIntoView(true);
+						focusEl?.scrollIntoView({ behavior: 'instant', block: 'center' });
 					}, Platform.isMobile ? 100 : 0); // delay on mobile for the on-screen keyboard	
 				}
 			});
@@ -216,9 +216,15 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 		const toolbarListDiv = createDiv();
 		toolbarListDiv.addClass("note-toolbar-setting-toolbar-list");
 		if (this.ntb.settings.toolbars.length == 0) {
-			toolbarListDiv
-				.createEl("div", { text: emptyMessageFr(t('setting.toolbars.label-empty-create-tbar')) })
-				.className = "note-toolbar-setting-empty-message";
+
+			const emptyMsgEl = createDiv({ text: 
+				emptyMessageFr(this.ntb, t('setting.toolbars.label-empty-create-tbar'), t('setting.toolbars.link-create'), async () => {
+					const newToolbar = await this.ntb.settingsManager.newToolbar();
+					this.ntb.settingsManager.openToolbarSettings(newToolbar, this);
+				}) });
+			emptyMsgEl.addClass('note-toolbar-setting-empty-message');
+			toolbarListDiv.append(emptyMsgEl);
+
 		}
 		else {
 			this.ntb.settings.toolbars.forEach(
@@ -472,7 +478,7 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 					toolbarListEl?.querySelector('.note-toolbar-setting-empty-message')?.remove();
 					if (!hasMatch && query.length > 0) {
 						toolbarListEl?.createDiv({ 
-							text: emptyMessageFr(t('setting.search.label-no-results')), 
+							text: emptyMessageFr(this.ntb, t('setting.search.label-no-results')), 
 							cls: 'note-toolbar-setting-empty-message' 
 						});
 					}
@@ -635,9 +641,18 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			itemsContainerEl.addClass('note-toolbar-setting-items-list-container');
 
 			if (this.ntb.settings.folderMappings.length == 0) {
-				itemsContainerEl
-					.createEl("div", { text: emptyMessageFr(t('setting.mappings.label-empty')) })
-					.className = "note-toolbar-setting-empty-message";
+
+				const emptyMsgEl = createDiv({ text: 
+					emptyMessageFr(this.ntb, t('setting.mappings.label-empty'), t('setting.mappings.link-create'), async () => {
+						let newMapping = { folder: "", toolbar: "" };
+						this.ntb.settings.folderMappings.push(newMapping);
+						await this.ntb.settingsManager.save();
+						this.display('.note-toolbar-sortablejs-list > div:last-child input[type="search"]', true);
+					}) });
+				emptyMsgEl.addClass('note-toolbar-setting-empty-message');
+				
+				itemsContainerEl.append(emptyMsgEl);
+
 			}
 			else {
 				const toolbarFolderListEl = createDiv();
@@ -682,10 +697,7 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 					.setTooltip(t('setting.mappings.button-new-tooltip'))
 					.setCta()
 					.onClick(async () => {
-						let newMapping = {
-							folder: "",
-							toolbar: ""
-						};
+						let newMapping = { folder: "", toolbar: "" };
 						this.ntb.settings.folderMappings.push(newMapping);
 						await this.ntb.settingsManager.save();
 						// TODO: add a form item to the existing list
@@ -863,6 +875,10 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 
 		const appToolbarGroup = new SettingGroup(collapsibleContainerEl);
 
+		//
+		// Editor menu
+		//
+
 		appToolbarGroup.addSetting((editorMenuSetting) => {
 			const existingEditorMenuToolbar = this.ntb.settingsManager.getToolbarById(this.ntb.settings.editorMenuToolbar);
 			editorMenuSetting
@@ -897,34 +913,46 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			editorMenuAsTbarSetting
 				.setName(t('setting.display-locations.option-editor-menu-as-tbar'))
 				.setDesc(t('setting.display-locations.option-editor-menu-as-tbar-description'))
-				.addToggle((cb: ToggleComponent) => {
-					cb.setValue(this.ntb.settings.editorMenuAsToolbar)
+				.setClass('note-toolbar-sub-setting-item')
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
+						.setValue(this.ntb.settings.editorMenuAsToolbar)
 						.onChange(async (value: boolean) => {
 							this.ntb.settings.editorMenuAsToolbar = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 			editorMenuAsTbarSetting.settingEl.id = 'note-toolbar-editor-menu-as-tbar-setting';
 			const hasEditorMenuToolbar = !!this.ntb.settings.editorMenuToolbar;
 			editorMenuAsTbarSetting.settingEl.setAttribute('data-active', hasEditorMenuToolbar.toString());
 		});
 
+		//
+		// File menu
+		//
+
 		appToolbarGroup.addSetting((showToolbarInFileMenuSetting) => {
 			showToolbarInFileMenuSetting
 				.setName(t('setting.display-contexts.option-filemenu'))
 				.setDesc(learnMoreFr(t('setting.display-contexts.option-filemenu-description'), 'Toolbars-within-the-app#File-menu'))
-				.addToggle((cb) => {
-					cb.setValue(this.ntb.settings.showToolbarInFileMenu)
-					cb.onChange(async (value) => {
+				.addToggle((toggle: ToggleComponent) => {
+					toggle.setValue(this.ntb.settings.showToolbarInFileMenu)
+					toggle.onChange(async (value) => {
 						this.ntb.settings.showToolbarInFileMenu = value;
 						await this.ntb.settingsManager.save();
 						// TODO? force the re-rendering of the current toolbar to update the menu
 					});
+					fixToggleTab(toggle);
 				});
 		});
 
+		//
+		// New tab view
+		//
+
 		appToolbarGroup.addSetting((emptyViewSetting) => {
-			const existingEmptyViewToolbar = this.ntb.settingsManager.getToolbarById(this.ntb.settings.emptyViewToolbar)
+			const existingEmptyViewToolbar = this.ntb.settingsManager.getToolbarById(this.ntb.settings.emptyViewToolbar);
 			emptyViewSetting
 				.setName(t('setting.display-locations.option-emptyview-tbar'))
 				.setDesc(t('setting.display-locations.option-emptyview-tbar-description'))
@@ -957,17 +985,24 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			launchpadSetting
 				.setName(t('setting.display-locations.option-launchpad'))
 				.setDesc(learnMoreFr(t('setting.display-locations.option-launchpad-description'), 'Toolbars-within-the-app#new-tab-view'))
-				.addToggle((cb: ToggleComponent) => {
-					cb.setValue(this.ntb.settings.showLaunchpad)
+				.setClass('note-toolbar-sub-setting-item')
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
+						.setValue(this.ntb.settings.showLaunchpad)
 						.onChange(async (value: boolean) => {
 							this.ntb.settings.showLaunchpad = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 			launchpadSetting.settingEl.id = 'note-toolbar-launchpad-setting';
 			const hasEmptyViewToolbar = !!this.ntb.settings.emptyViewToolbar;
 			launchpadSetting.settingEl.setAttribute('data-active', hasEmptyViewToolbar.toString());
 		});
+
+		//
+		// Ribbon
+		//
 
 		appToolbarGroup.addSetting((ribbonActionSetting) => {
 			ribbonActionSetting
@@ -979,10 +1014,50 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 						.setValue(this.ntb.settings.ribbonAction)
 						.onChange(async (value: RibbonAction) => {
 							this.ntb.settings.ribbonAction = value;
+							// toggle toolbar setting, if necessary
+							const hasRibbonToolbar = (value === RibbonAction.ToolbarSelected);
+							const ribbonToolbarEl = this.containerEl.querySelector('#note-toolbar-ribbon-toolbar-setting');
+							ribbonToolbarEl?.setAttribute('data-active', hasRibbonToolbar.toString());
 							await this.ntb.settingsManager.save();
 						})
 					);
 		});
+
+		appToolbarGroup.addSetting((ribbonToolbarSetting) => {
+			const existingRibbonToolbar = this.ntb.settingsManager.getToolbarById(this.ntb.settings.ribbonToolbar);
+			ribbonToolbarSetting
+				.setName(t('setting.display-locations.ribbon-action.option-toolbar-selected-name'))
+				.setDesc(t('setting.display-locations.ribbon-action.option-toolbar-selected-description'))
+				.setClass('note-toolbar-sub-setting-item')
+				.setClass('note-toolbar-setting-item-control-std-with-help')
+				.addSearch(async (cb) => {
+					new ToolbarSuggester(this.ntb, cb.inputEl);
+					cb.setPlaceholder(t('setting.display-locations.ribbon-action.option-toolbar-selected-placeholder'))
+					.setValue(existingRibbonToolbar ? existingRibbonToolbar.name : '')
+					.onChange(debounce(async (name) => {
+						const isValid = await updateItemComponentStatus(this.ntb, this, name, SettingType.Toolbar, ribbonToolbarSetting.controlEl, undefined, 'beforeend');
+						const newToolbar = isValid ? this.ntb.settingsManager.getToolbarByName(name) : undefined;
+						this.ntb.settings.ribbonToolbar = newToolbar?.uuid ?? null;
+						// update toolbar preview
+						const toolbarPreviewFr = newToolbar && createToolbarPreviewFr(this.ntb, newToolbar, undefined, false);
+						removeFieldHelp(ribbonToolbarSetting.controlEl);
+						setFieldHelp(ribbonToolbarSetting.controlEl, toolbarPreviewFr);
+						await this.ntb.settingsManager.save();
+					}, 250));
+					await updateItemComponentStatus(this.ntb, this, existingRibbonToolbar ? existingRibbonToolbar.name : '', SettingType.Toolbar, cb.inputEl.parentElement, undefined, 'beforeend');
+				});
+			// show the sub-setting if needed
+			ribbonToolbarSetting.settingEl.id = 'note-toolbar-ribbon-toolbar-setting';
+			const hasRibbonToolbar = (this.ntb.settings.ribbonAction === RibbonAction.ToolbarSelected);
+			ribbonToolbarSetting.settingEl.setAttribute('data-active', hasRibbonToolbar.toString());
+			// show the toolbar preview
+			const ribbonToolbarFr = existingRibbonToolbar && createToolbarPreviewFr(this.ntb, existingRibbonToolbar, undefined, false);
+			setFieldHelp(ribbonToolbarSetting.controlEl, ribbonToolbarFr);
+		});
+
+		//
+		// Selected text
+		//
 
 		appToolbarGroup.addSetting((textToolbarSetting) => {
 			const existingTextToolbar = this.ntb.settingsManager.getToolbarById(this.ntb.settings.textToolbar);
@@ -1022,12 +1097,15 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			textToolbarOnKeyboardSetting
 				.setName(t('setting.display-locations.option-text-on-keyboard'))
 				.setDesc(t('setting.display-locations.option-text-on-keyboard-description'))
-				.addToggle((cb: ToggleComponent) => {
-					cb.setValue(this.ntb.settings.textToolbarOnKeyboard)
+				.setClass('note-toolbar-sub-setting-item')
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
+						.setValue(this.ntb.settings.textToolbarOnKeyboard)
 						.onChange(async (value: boolean) => {
 							this.ntb.settings.textToolbarOnKeyboard = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 			textToolbarOnKeyboardSetting.settingEl.id = 'ntb-text-tbar-keyboard-setting';
 			const hasTextToolbar = !!this.ntb.settings.textToolbar;
@@ -1063,91 +1141,98 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 		fileTypeGroup.addSetting((audioSetting) => {
 			audioSetting
 				.setName(t('setting.display-contexts.option-audio'))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.showToolbarIn.audio)
 						.onChange(async (value: boolean) => {
 							this.ntb.settings.showToolbarIn.audio = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 
 		fileTypeGroup.addSetting((basesSetting) => {
 			basesSetting
 				.setName(t('setting.display-contexts.option-bases'))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.showToolbarIn.bases)
 						.onChange(async (value: boolean) => {
 							this.ntb.settings.showToolbarIn.bases = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 
 		fileTypeGroup.addSetting((canvasSetting) => {
 			canvasSetting
 				.setName(t('setting.display-contexts.option-canvas'))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.showToolbarIn.canvas)
 						.onChange(async (value: boolean) => {
 							this.ntb.settings.showToolbarIn.canvas = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 
 		fileTypeGroup.addSetting((imageSetting) => {
 			imageSetting
 				.setName(t('setting.display-contexts.option-image'))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.showToolbarIn.image)
 						.onChange(async (value: boolean) => {
 							this.ntb.settings.showToolbarIn.image = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 
 		fileTypeGroup.addSetting((kanbanSetting) => {
 			kanbanSetting
 				.setName(t('setting.display-contexts.option-kanban'))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.showToolbarIn.kanban)
 						.onChange(async (value: boolean) => {
 							this.ntb.settings.showToolbarIn.kanban = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 
 		fileTypeGroup.addSetting((pdfSetting) => {
 			pdfSetting
 				.setName(t('setting.display-contexts.option-pdf'))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.showToolbarIn.pdf)
 						.onChange(async (value: boolean) => {
 							this.ntb.settings.showToolbarIn.pdf = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 
 		fileTypeGroup.addSetting((videoSetting) => {
 			videoSetting
 				.setName(t('setting.display-contexts.option-video'))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.showToolbarIn.video)
 						.onChange(async (value: boolean) => {
 							this.ntb.settings.showToolbarIn.video = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 
@@ -1195,13 +1280,14 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			includeIconsSetting
 				.setName(t('setting.copy-as-callout.option-icons'))
 				.setDesc(t('setting.copy-as-callout.option-icons-description'))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.export.includeIcons)
 						.onChange(async (value) => {
 							this.ntb.settings.export.includeIcons = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 
@@ -1209,13 +1295,14 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			replaceVarsSetting
 				.setName(t('setting.copy-as-callout.option-vars'))
 				.setDesc(t('setting.copy-as-callout.option-vars-description', {interpolation: { skipOnVariables: true }} ))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.export.replaceVars)
 						.onChange(async (value) => {
 							this.ntb.settings.export.replaceVars = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 
@@ -1223,13 +1310,14 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			useIdsSetting
 				.setName(t('setting.copy-as-callout.option-ids'))
 				.setDesc(t('setting.copy-as-callout.option-ids-description'))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.export.useIds)
 						.onChange(async (value) => {
 							this.ntb.settings.export.useIds = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 
@@ -1237,13 +1325,14 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			useDataElsSetting
 				.setName(t('setting.copy-as-callout.option-data'))
 				.setDesc(t('setting.copy-as-callout.option-data-description'))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.export.useDataEls)
 						.onChange(async (value) => {
 							this.ntb.settings.export.useDataEls = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 
@@ -1312,13 +1401,14 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			keepPropsStateSetting
 				.setName(t('setting.other.keep-props-state.name'))
 				.setDesc(t('setting.other.keep-props-state.description'))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.keepPropsState)
 						.onChange(async (value) => {
 							this.ntb.settings.keepPropsState = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 
@@ -1326,13 +1416,14 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			lockCalloutsSetting
 				.setName(t('setting.other.lock-callouts.name'))
 				.setDesc(t('setting.other.lock-callouts.description'))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.lockCallouts)
 						.onChange(async (value) => {
 							this.ntb.settings.lockCallouts = value;
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 
@@ -1342,12 +1433,11 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 				.setDesc(t('setting.other.navbar-visibility.description'))
 				.addButton((button: ButtonComponent) => {
 					button
-						.setIcon('gear')
-						.setTooltip(t('setting.toolbars.button-more-tooltip'))
 						.onClick((cb) => {
-							let visibilityMenu = this.getNavbarVisibilityMenu();
+							let visibilityMenu = this.getNavbarVisibilityMenu(button);
 							visibilityMenu.showAtPosition(getElementPosition(button.buttonEl));
 						});
+					this.updateNavbarVisibilityButton(button);
 				});
 		});
 
@@ -1355,14 +1445,15 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			scriptingSetting
 				.setName(t('setting.other.scripting.name'))
 				.setDesc(learnMoreFr(t('setting.other.scripting.description'), 'Executing-scripts'))
-				.addToggle((cb: ToggleComponent) => {
-					cb
+				.addToggle((toggle: ToggleComponent) => {
+					toggle
 						.setValue(this.ntb.settings.scriptingEnabled)
 						.onChange(async (value) => {
 							this.ntb.settings.scriptingEnabled = value;
 							this.ntb.adapters.updateAdapters();
 							await this.ntb.settingsManager.save();
 						});
+					fixToggleTab(toggle);
 				});
 		});
 			
@@ -1370,13 +1461,14 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			showEditInFabMenuSetting
 				.setName(t('setting.other.show-edit-tbar.name'))
 				.setDesc(t('setting.other.show-edit-tbar.description'))
-				.addToggle((cb) => {
-					cb.setValue(this.ntb.settings.showEditInFabMenu)
-					cb.onChange(async (value) => {
+				.addToggle((toggle) => {
+					toggle.setValue(this.ntb.settings.showEditInFabMenu)
+					toggle.onChange(async (value) => {
 						this.ntb.settings.showEditInFabMenu = value;
 						await this.ntb.settingsManager.save();
 						// TODO? force the re-rendering of the current toolbar to update the menu
 					});
+					fixToggleTab(toggle);
 				});
 		});
 
@@ -1384,14 +1476,15 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 			debugSetting
 				.setName(t('setting.other.debugging.name'))
 				.setDesc(t('setting.other.debugging.description'))
-				.addToggle((cb) => {
-					cb.setValue(this.ntb.settings.debugEnabled)
-					cb.onChange(async (value) => {
+				.addToggle((toggle) => {
+					toggle.setValue(this.ntb.settings.debugEnabled)
+					toggle.onChange(async (value) => {
 						this.ntb.settings.debugEnabled = value;
 						this.ntb.toggleDebugging();
 						this.ntb.debug('Note Toolbar debugging:', value); // should not output if debugging is disabled
 						await this.ntb.settingsManager.save();
 					});
+					fixToggleTab(toggle);
 				});
 		});
 
@@ -1485,35 +1578,23 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 
 	/**
 	 * Shows the menu where you can customize Obsidian's mobile navigation bar.
+	 * @param button ButtonComponent that triggered the menu, for status updates.
 	 */
-	getNavbarVisibilityMenu(): Menu {
+	getNavbarVisibilityMenu(button: ButtonComponent): Menu {
 		const menu = new Menu();
 
-		const obsidianUiEls = new Map(
-			OBSIDIAN_UI_ELEMENTS.map(el => [el.key, el])
-		);
-
-		const obsidianUiSetting = new Map(
-			Object.entries(this.ntb.settings.obsidianUiVisibility)
-				.filter(([key]) => key.startsWith('mobile.navbar.'))
-		);
-
-		// check if all actions are hidden
-		const allNavbarKeys = Array.from(
-			obsidianUiEls.keys()).filter(key => key.startsWith('mobile.navbar.')
-		);
-		const allHidden = allNavbarKeys.every(key => 
-			obsidianUiSetting.get(key) === false
-		);
+		const { obsidianUiEls, obsidianUiSetting, allNavbarKeys, allHidden } = this.getNavbarState();
 
 		// toggle to hide/unhide all actions
 		menu.addItem((menuItem: MenuItem) => {
 			menuItem
 				.setTitle(allHidden ? t('setting.other.navbar-visibility.option-unhide-all') : t('setting.other.navbar-visibility.option-hide-all'))
+				.setIcon(allHidden ? 'eye' : 'eye-off')
 				.onClick(async (menuEvent) => { 
 					allNavbarKeys.forEach((key) => {
 						this.ntb.settings.obsidianUiVisibility[key] = allHidden ? true : false;
 					});
+					this.updateNavbarVisibilityButton(button);
 					await this.ntb.settingsManager.save();
 				});
 		});
@@ -1531,6 +1612,7 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 						.onClick(async (menuEvent) => {
 							const currentValue = this.ntb.settings.obsidianUiVisibility[uiEl.key] ?? true;
 							this.ntb.settings.obsidianUiVisibility[uiEl.key] = !currentValue;
+							this.updateNavbarVisibilityButton(button);
 							await this.ntb.settingsManager.save();
 						});
 				});
@@ -1538,6 +1620,53 @@ export default class NoteToolbarSettingTab extends PluginSettingTab {
 		});
 
 		return menu;
+	}
+
+	getNavbarState() {
+		const obsidianUiEls = new Map(
+			OBSIDIAN_UI_ELEMENTS.map(el => [el.key, el])
+		);
+
+		const obsidianUiSetting = new Map(
+			Object.entries(this.ntb.settings.obsidianUiVisibility)
+				.filter(([key]) => key.startsWith('mobile.navbar.'))
+		);
+
+		// check if all actions are hidden
+		const allNavbarKeys = Array.from(
+			obsidianUiEls.keys()).filter(key => key.startsWith('mobile.navbar.')
+		);
+		const allHidden = allNavbarKeys.every(key => 
+			obsidianUiSetting.get(key) === false
+		);
+
+		return {
+			obsidianUiEls,
+			obsidianUiSetting,
+			allNavbarKeys,
+			allHidden
+		};
+	}
+
+	updateNavbarVisibilityButton(button: ButtonComponent) {
+		const { obsidianUiEls, obsidianUiSetting, allNavbarKeys, allHidden } = this.getNavbarState();
+		if (allHidden) {
+			button.setIcon('eye-off');
+			button.setTooltip(t('setting.other.navbar-visibility.label-hidden'));
+			return;
+		}
+		// if some are hidden
+		else if (allNavbarKeys.some(key => obsidianUiSetting.get(key) === false)) {
+			button.setIcon('note-toolbar-eye-dashed');
+			button.setTooltip(t('setting.other.navbar-visibility.label-partial'));
+			return;
+		}
+		// all are visible
+		else {
+			button.setIcon('eye');
+			button.setTooltip(t('setting.other.navbar-visibility.label-visible'));
+			return;
+		}
 	}
 
 }
