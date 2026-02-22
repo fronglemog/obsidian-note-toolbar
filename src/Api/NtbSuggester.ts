@@ -1,7 +1,7 @@
-import { Component, FuzzyMatch, FuzzySuggestModal, MarkdownRenderer } from "obsidian";
+import NoteToolbarPlugin from "main";
+import { Component, FuzzyMatch, FuzzySuggestModal, getIcon, MarkdownRenderer, setIcon } from "obsidian";
 import { t } from "Settings/NoteToolbarSettings";
 import { NtbSuggesterOptions } from "./INoteToolbarApi";
-import NoteToolbarPlugin from "main";
 
 /**
  * Provides a Suggester modal that can be accessed from the Note Toolbar API.
@@ -16,11 +16,13 @@ export default class NtbSuggester<T> extends FuzzySuggestModal<T> {
 
     private submitted = false;
 
-    private allowCustomInput: boolean = false;
+    private allowCustomInput: boolean;
     private class = '';
+    private collapse: boolean;
     private default: string;
+    private icon: string;
     private label: string;
-    private rendermd;
+    private rendermd: boolean;
 
     /**
      * @see INoteToolbarApi.suggester
@@ -31,25 +33,24 @@ export default class NtbSuggester<T> extends FuzzySuggestModal<T> {
         private keys?: T[],
         options?: NtbSuggesterOptions 
     ) {
+        
+        // check if `options` was accidentally passed as `keys`
+        if (keys !== undefined && keys !== null && !Array.isArray(keys)) {
+            throw new Error('ntb.suggester(): The `options` object may have been passed as the `keys` parameter. Set the second parameter to `null` and try again.');
+        }
 
         super(ntb.app);
 
-        const { 
-            allowCustomInput = false,
-            class: css_classes = '',
-            default: default_value = '',
-            label: label_text = '',
-            limit,
-            placeholder,
-            rendermd = true, 
-        } = options || {};
+        this.allowCustomInput = options?.allowCustomInput ?? false;
+        this.class = options?.class ?? '';
+        this.collapse = options?.collapse ?? false;
+        this.default = options?.default ?? '';
+        this.icon = options?.icon ?? '';
+        this.label = options?.label ?? '';
+        if (options?.limit) this.limit = options.limit;
+        this.rendermd = options?.rendermd ?? true;
 
-        this.allowCustomInput = allowCustomInput;
-        this.class = css_classes;
-        this.default = default_value;
-        this.label = label_text;
-        this.rendermd = rendermd;
-        this.setPlaceholder(placeholder ? placeholder : t('api.ui.suggester-placeholder'));
+        this.setPlaceholder(options?.placeholder ? options.placeholder : t('api.ui.suggester-placeholder'));
         this.setInstructions([
             {command: '↑↓', purpose: t('api.ui.instruction-navigate')},
             {command: '↵', purpose: t('api.ui.instruction-select')},
@@ -62,9 +63,7 @@ export default class NtbSuggester<T> extends FuzzySuggestModal<T> {
                 this.keys = values as unknown as T[];
             }
         }
-        
-        limit && (this.limit = limit);
-        
+                
         this.modalEl.addClass("note-toolbar-ui");
         this.class && this.modalEl.addClasses([...this.class.split(' ')]);
         this.modalEl.setAttr('data-ntb-ui-type', 'suggester');
@@ -73,6 +72,16 @@ export default class NtbSuggester<T> extends FuzzySuggestModal<T> {
     onOpen(): void {
 
         super.onOpen();
+
+        if (this.icon && getIcon(this.icon)) {
+            const inputContainerEl = this.modalEl.querySelector('.prompt-input-container');
+            if (inputContainerEl) {
+                const iconEl = inputContainerEl.createDiv();
+                iconEl.addClass('ntb-suggester-input-icon'),
+                inputContainerEl.insertAdjacentElement('afterbegin', iconEl);
+                setIcon(iconEl, this.icon);
+            }
+        }
 
         if (this.label) {
             const headerEl = this.containerEl.createDiv('ntb-suggester-header');
@@ -99,6 +108,13 @@ export default class NtbSuggester<T> extends FuzzySuggestModal<T> {
             }
             return false;
         });
+
+        if (this.collapse) {
+            this.modalEl.toggleClass('ntb-suggester-collapse', !this.inputEl.value);
+            this.ntb.registerDomEvent(this.inputEl, 'input', () => {
+                this.modalEl.toggleClass('ntb-suggester-collapse', !this.inputEl.value);
+            });
+        }
 
     }
 

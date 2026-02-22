@@ -1,7 +1,6 @@
 import NoteToolbarPlugin from "main";
 import { Platform, SuggestModal, TFile } from "obsidian";
 import { DEFAULT_ITEM_SETTINGS, ErrorBehavior, GALLERY_DIVIDER_ID, ITEM_GALLERY_DIVIDER, ItemType, LocalVar, t, ToolbarItemSettings, ToolbarSettings } from "Settings/NoteToolbarSettings";
-import { renderItemSuggestion } from "../Utils/SettingsUIUtils";
 import ItemModal from "./ItemModal";
 import ToolbarSuggestModal from "./ToolbarSuggestModal";
 
@@ -118,6 +117,8 @@ export default class ItemSuggestModal extends SuggestModal<ToolbarItemSettings> 
             }
         }
     
+        this.patchChooserToSkipDivider();
+
     }
 
     /**
@@ -255,6 +256,31 @@ export default class ItemSuggestModal extends SuggestModal<ToolbarItemSettings> 
     }
 
     /**
+     * Patch chooser to skip the Gallery divider item during keyboard navigation.
+     */
+    private patchChooserToSkipDivider() {
+        const originalSetSelectedItem = this.chooser.setSelectedItem.bind(this.chooser);
+        this.chooser.setSelectedItem = (index: number, event: KeyboardEvent | boolean) => {
+            const items = this.chooser.values;
+            if (items?.length) {
+                // capture direction before wrapping
+                let direction = index >= this.chooser.selectedItem ? 1 : -1;
+                // wrap the index first, before divider checks
+                index = (index + items.length) % items.length;
+                if (items[index]?.uuid === GALLERY_DIVIDER_ID) {
+                    // if we've wrapped to a divider at the boundary, flip direction
+                    if (index === 0) direction = 1;
+                    else if (index === items.length - 1) direction = -1;
+                    while (items[index]?.uuid === GALLERY_DIVIDER_ID) {
+                        index = (index + direction + items.length) % items.length;
+                    }
+                }
+            }
+            originalSetSelectedItem(index, event);
+        };
+    }
+
+    /**
      * Sorts the provided suggestions based on the provided search string.
      * @param itemsToSort ToolbarItemSettings to sort
      * @param searchString provided search string
@@ -339,7 +365,7 @@ export default class ItemSuggestModal extends SuggestModal<ToolbarItemSettings> 
                 emptyEl.setText(t('setting.item-suggest-modal.label-empty-no-items'));
                 emptyEl.insertAdjacentElement('afterend', el);
             }
-            renderItemSuggestion(this.ntb, item, el, this.inputEl.value, true, (this.mode === 'QuickTools'));
+            this.ntb.settingsUtils.renderItemSuggestion(item, el, this.inputEl.value, true, (this.mode === 'QuickTools'));
         }
     }
 

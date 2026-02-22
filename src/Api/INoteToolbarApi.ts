@@ -6,7 +6,7 @@ import { IToolbar } from "./IToolbar";
 /**
  * The Note Toolbar API provides toolbar access, and the ability to show UI (suggesters, prompts, menus, and modals). The latter enables Dataview JS, JS Engine, or Templater scripts to ask for information, or to show helpful text.
  * 
- * Using the `ntb` object, below are the functions that can be called in scripts that are [executed from Note Toolbar items](https://github.com/chrisgurney/obsidian-note-toolbar/wiki/Executing-scripts).
+ * Using the `ntb` object, the below functions can be called in scripts that are [executed from Note Toolbar items](https://github.com/chrisgurney/obsidian-note-toolbar/wiki/Executing-scripts).
  * 
  * I would appreciate your feedback, which you can leave in [the discussions](https://github.com/chrisgurney/obsidian-note-toolbar/discussions).
  * 
@@ -37,6 +37,7 @@ import { IToolbar } from "./IToolbar";
  * 
  * - [[ntb.app|Note-Toolbar-API#app]]
  * - [[ntb.clipboard|Note-Toolbar-API#clipboard]]
+ * - [[ntb.export|Note-Toolbar-API#export]]
  * - [[ntb.fileSuggester|Note-Toolbar-API#filesuggester]]
  * - [[ntb.getActiveItem|Note-Toolbar-API#getactiveitem]]
  * - [[ntb.getItem|Note-Toolbar-API#getitem]]
@@ -85,6 +86,24 @@ export default interface INoteToolbarApi<T> {
      * new Notice(value);
      */
     clipboard: () => Promise<string | null>;
+
+    /**
+     * Exports the given toolbar as a [Note Toolbar callout](https://github.com/chrisgurney/obsidian-note-toolbar/wiki/Note-Toolbar-Callouts).
+     * 
+     * @returns Toolbar as a callout or `null` if the toolbar is undefined.
+     * 
+     * @example
+     * const toolbars = ntb.getToolbars();
+     * for (let toolbar of toolbars) {
+     *     console.log(`\n## ${toolbar.getName()}\n\n`);
+     *     console.log(await ntb.export(toolbar));
+     * }
+     * 
+     * @see `NtbExport.js` in the [examples/Scripts folder](https://github.com/chrisgurney/obsidian-note-toolbar/tree/master/examples/Scripts).
+     * 
+     * @since 1.29
+     */
+    export: (toolbar: IToolbar) => Promise<string | null>;
 
     /**
      * Shows a file suggester modal and waits for the user's selection.
@@ -474,9 +493,21 @@ export interface NtbSuggesterOptions {
      */
     class?: string;
     /**
+     * If set to `true`, the results and suggester instructions are hidden until input is provided. Default is `false`.
+     * 
+     * @since 1.29.14
+     */
+    collapse?: boolean;
+    /**
      * Optionally pre-set the suggester's input with this value. Matching results will be shown, as if you typed in that string yourself (assuming the string appears in the list of options provided). If not provided, no default is set.
      */
     default?: string;
+    /**
+     * Optional icon to place before the input field.
+     * 
+     * @since 1.29.14
+     */
+    icon?: string;
     /**
      * Optional text shown above the input field, with markdown formatting supported. Default is no label.
      */

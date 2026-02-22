@@ -5,7 +5,7 @@ import ItemModal from "Settings/UI/Modals/ItemModal";
 import ShareModal from "Settings/UI/Modals/ShareModal";
 import StyleModal from "Settings/UI/Modals/StyleModal";
 import ToolbarSettingsModal from "Settings/UI/Modals/ToolbarSettingsModal";
-import { learnMoreFr, openItemSuggestModal } from "Settings/UI/Utils/SettingsUIUtils";
+import { learnMoreFr } from "Settings/UI/Utils/SettingsUIUtils";
 import { exportToCallout } from "Utils/ImportExport";
 import { TbarData } from "./ToolbarRenderer";
 
@@ -69,40 +69,51 @@ export default class ContextMenu {
 				}
 
 				if (currentView?.getViewType() === 'empty') {
-					if (this.ntb.settings.showLaunchpad) {
-						if (currentPosition !== PositionType.Top && currentPosition !== PositionType.Props) {
-							positionMenu.addItem((item: MenuItem) => {
-								item.setTitle(t('setting.position.option-centered'))
-									.setIcon('layout-grid')
-									.onClick(async (menuEvent) => {
-										await this.ntb.settingsManager.updatePosition(toolbarSettings, PositionType.Props);
-										contextMenu.close();
-									});
-							});
-						}
+					const EMPTY_VIEW_POSITIONS = this.ntb.settings.showLaunchpad
+						? { types: [PositionType.Props, PositionType.Top], titleKey: 'setting.position.option-centered', icon: 'layout-grid' }
+						: { types: [PositionType.Top], titleKey: 'setting.position.option-top', icon: 'arrow-up-to-line' };
+
+					if (currentPosition && !EMPTY_VIEW_POSITIONS.types.includes(currentPosition)) {
+						positionMenu.addItem((item: MenuItem) => {
+							item.setTitle(t(EMPTY_VIEW_POSITIONS.titleKey))
+								.setIcon(EMPTY_VIEW_POSITIONS.icon)
+								.onClick(async (menuEvent) => {
+									await this.ntb.settingsManager.updatePosition(toolbarSettings, EMPTY_VIEW_POSITIONS.types[0]);
+									contextMenu.close();
+								});
+						});
 					}
-					else {
-						if (currentPosition !== PositionType.Top) {
-							positionMenu.addItem((item: MenuItem) => {
-								item.setTitle(t('setting.position.option-top'))
-									.setIcon('arrow-up-to-line')
-									.onClick(async (menuEvent) => {
-										await this.ntb.settingsManager.updatePosition(toolbarSettings, PositionType.Top);
-										contextMenu.close();
-									});
+				}
+				else if (currentView?.getViewType() === 'webviewer' && this.ntb.settings.webviewerToolbar) {
+					const WEB_VIEWER_POSITIONS = [
+						{ types: [PositionType.TabBar], titleKey: 'setting.position.option-addressbar', icon: 'panel-top-close' },
+						{ types: [PositionType.Props], titleKey: 'setting.position.option-below-addressbar', icon: 'panel-top-open' },
+						{ types: [PositionType.Bottom], titleKey: 'setting.position.option-bottom', icon: 'arrow-down-to-line' }
+					];
+					if (currentPosition) {
+						WEB_VIEWER_POSITIONS
+							.filter(option => !option.types.includes(currentPosition))
+							.forEach(option => {
+								positionMenu.addItem((item: MenuItem) => {
+									item.setTitle(t(option.titleKey))
+										.setIcon(option.icon)
+										.onClick(async (menuEvent) => {
+											await this.ntb.settingsManager.updatePosition(toolbarSettings, option.types[0]!);
+											contextMenu.close();
+										});
+								});
 							});
-						}
 					}
-				} 
+				}
 				else {
-					const positions = [
+					const DEFAULT_POSITIONS = [
 						{ type: PositionType.TabBar, titleKey: 'setting.position.option-tabbar', icon: 'panel-top' },
 						{ type: PositionType.Top, titleKey: 'setting.position.option-top', icon: 'arrow-up-to-line' },
 						{ type: PositionType.Props, titleKey: 'setting.position.option-props', icon: 'arrow-down-narrow-wide' },
 						{ type: PositionType.Bottom, titleKey: 'setting.position.option-bottom', icon: 'arrow-down-to-line' }
 					];
 
-					positions.forEach(({ type, titleKey, icon }) => {
+					DEFAULT_POSITIONS.forEach(({ type, titleKey, icon }) => {
 						if (currentPosition !== type) {
 							positionMenu.addItem((item: MenuItem) => {
 								item.setTitle(t(titleKey))
@@ -200,7 +211,7 @@ export default class ContextMenu {
 				.setTitle(t('toolbar.menu-add-item'))
 				.onClick(async () => {
 					const toolbarItemIndex = this.ntb.utils.calcToolbarItemIndex(event);
-					if (toolbarSettings) openItemSuggestModal(this.ntb, toolbarSettings, 'New', undefined, toolbarItemIndex);
+					if (toolbarSettings) this.ntb.settingsUtils.openItemSuggestModal(toolbarSettings, 'New', undefined, toolbarItemIndex);
 				});
 		});
 

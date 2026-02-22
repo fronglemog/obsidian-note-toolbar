@@ -30,9 +30,11 @@ export default class TipView extends ItemView {
 
         const tip = TipItems.find(tip => tip.id.includes(this.state.id));
         if (!tip) return; // no matching tip
+        
+        this.ntb.settingsUtils.addCloseToPhoneNav(this);
 
         const language = (typeof i18next.language === 'string' && i18next.language.trim()) || 'en';
-
+        
         const contentDiv = this.contentEl.createDiv();
         contentDiv.addClass('note-toolbar-setting-help-view');
 
@@ -87,7 +89,9 @@ export default class TipView extends ItemView {
     getDisplayText(): string {
         const tip = TipItems.find(tip => tip.id.includes(this.state?.id));
         const language = (typeof i18next.language === 'string' && i18next.language.trim()) || 'en';
-        return `${t('plugin.note-toolbar')} • ${(tip as TipType)?.title[language] ?? t('setting.help.title')}`;
+        const title = (tip as TipType)?.title?.[language];
+        // on the initial call Tip is undefined, so we use a generic fallback
+        return title ? t('plugin.note-toolbar') + ' • ' + title : t('setting.help.title');
     }
 
     getIcon(): string {
@@ -125,17 +129,20 @@ export default class TipView extends ItemView {
      * @returns Body of the Tip, or null.
      */
     async getTip(filename: string, language: string = 'en'): Promise<string | null> {
-        let url = `${URL_TIPS}/${language}/${filename}.md`;
-        let res = await requestUrl(url);
-    
-        if ((!res || res.status !== 200) && language !== 'en') {
-            url = `${URL_TIPS}/en/${filename}.md`;
-            res = await requestUrl(url);
+        try {
+            const res = await requestUrl(`${URL_TIPS}/${language}/${filename}.md`);
+            if (res.status !== 200) return null;
+            return res.text ?? '';
+        } catch (e) {
+            this.ntb.debug(`Error fetching tip for language (${language}). Falling back to English.\n${e}`);
+            try {
+                const res = await requestUrl(`${URL_TIPS}/en/${filename}.md`);
+                if (res.status !== 200) return null;
+                return res.text ?? '';
+            } catch {
+                return null;
+            }
         }
-    
-        if (!res || res.status !== 200) return null;
-    
-        return res.text;
     }
 
     /**
@@ -152,7 +159,9 @@ export default class TipView extends ItemView {
             });
             calloutEl.textContent = '';
             calloutEl.className = '';
-            renderGalleryItems(this.ntb, calloutEl, items, TIP_COLORS[color]);
+            const itemWrapperEl = calloutEl.createDiv();
+            itemWrapperEl.addClass('note-toolbar-gallery-card-items-no-border');
+            renderGalleryItems(this.ntb, itemWrapperEl, items, TIP_COLORS[color]);
         });
 
 		this.ntb.registerDomEvent(contentEl, 'click', async (evt) => {
@@ -284,10 +293,11 @@ export function renderTipItems(ntb: NoteToolbarPlugin, containerEl: HTMLDivEleme
             itemEl.setAttribute('data-ignore-swipe', 'true');
             setTooltip(itemEl, tip.id === 'gallery' ? t('setting.button-gallery-tooltip') : t('setting.help.tooltip-view-tip'));
             
-            const itemTitleEl = itemEl.createDiv('note-toolbar-card-item-title').setText(tip.title[language]);
-            if (tip.description) {
-                itemEl.createDiv('note-toolbar-card-item-description').setText(tip.description[language]);
-            }
+            const tipTitle = tip.title?.[language] || tip.title['en'];
+            const tipDesc = tip.description?.[language] || tip.description['en'] || '';
+
+            const itemTitleEl = itemEl.createDiv('note-toolbar-card-item-title').setText(tipTitle);
+            if (tipDesc) itemEl.createDiv('note-toolbar-card-item-description').setText(tipDesc);
 
             const iconEl = itemEl.createDiv();
             iconEl.addClass('note-toolbar-card-item-icon');

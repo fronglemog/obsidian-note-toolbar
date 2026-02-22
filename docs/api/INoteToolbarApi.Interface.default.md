@@ -2,7 +2,7 @@
 
 The Note Toolbar API provides toolbar access, and the ability to show UI (suggesters, prompts, menus, and modals). The latter enables Dataview JS, JS Engine, or Templater scripts to ask for information, or to show helpful text.
 
-Using the `ntb` object, below are the functions that can be called in scripts that are [executed from Note Toolbar items](https://github.com/chrisgurney/obsidian-note-toolbar/wiki/Executing-scripts).
+Using the `ntb` object, the below functions can be called in scripts that are [executed from Note Toolbar items](https://github.com/chrisgurney/obsidian-note-toolbar/wiki/Executing-scripts).
 
 I would appreciate your feedback, which you can leave in [the discussions](https://github.com/chrisgurney/obsidian-note-toolbar/discussions).
 
@@ -33,6 +33,7 @@ const itemEl = activeDocument.getElementById('112c7ed3-d5c2-4750-b95d-75bc84e235
 
 - [[ntb.app|Note-Toolbar-API#app]]
 - [[ntb.clipboard|Note-Toolbar-API#clipboard]]
+- [[ntb.export|Note-Toolbar-API#export]]
 - [[ntb.fileSuggester|Note-Toolbar-API#filesuggester]]
 - [[ntb.getActiveItem|Note-Toolbar-API#getactiveitem]]
 - [[ntb.getItem|Note-Toolbar-API#getitem]]
@@ -101,6 +102,44 @@ new Notice(value);
 
 ***
 
+### export()
+
+> **export**: (`toolbar`) => `Promise`\<`string` \| `null`\>
+
+Exports the given toolbar as a [Note Toolbar callout](https://github.com/chrisgurney/obsidian-note-toolbar/wiki/Note-Toolbar-Callouts).
+
+#### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `toolbar` | [`IToolbar`](IToolbar.Interface.IToolbar.md) |
+
+#### Returns
+
+`Promise`\<`string` \| `null`\>
+
+Toolbar as a callout or `null` if the toolbar is undefined.
+
+#### Example
+
+```ts
+const toolbars = ntb.getToolbars();
+for (let toolbar of toolbars) {
+    console.log(`\n## ${toolbar.getName()}\n\n`);
+    console.log(await ntb.export(toolbar));
+}
+```
+
+#### See
+
+`NtbExport.js` in the [examples/Scripts folder](https://github.com/chrisgurney/obsidian-note-toolbar/tree/master/examples/Scripts).
+
+#### Since
+
+1.29
+
+***
+
 ### fileSuggester()
 
 > **fileSuggester**: (`options?`) => `Promise`\<`TAbstractFile` \| `null`\>
@@ -111,12 +150,14 @@ Shows a file suggester modal and waits for the user's selection.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `options?` | \{ `allowCustomInput?`: `boolean`; `class?`: `string`; `default?`: `string`; `filesonly?`: `boolean`; `foldersonly?`: `boolean`; `label?`: `string`; `limit?`: `number`; `placeholder?`: `string`; `rendermd?`: `boolean`; \} | Optional display options. |
+| `options?` | \{ `allowCustomInput?`: `boolean`; `class?`: `string`; `collapse?`: `boolean`; `default?`: `string`; `filesonly?`: `boolean`; `foldersonly?`: `boolean`; `icon?`: `string`; `label?`: `string`; `limit?`: `number`; `placeholder?`: `string`; `rendermd?`: `boolean`; \} | Optional display options. |
 | `options.allowCustomInput?` | `boolean` | If set to `true`, the user can input a custom value that is not in the list of suggestions. Default is `false`. |
 | `options.class?` | `string` | Optional CSS class(es) to add to the component. |
+| `options.collapse?` | `boolean` | If set to `true`, the results and suggester instructions are hidden until input is provided. Default is `false`. **Since** 1.29.14 |
 | `options.default?` | `string` | Optionally pre-set the suggester's input with this value. Matching results will be shown, as if you typed in that string yourself (assuming the string appears in the list of options provided). If not provided, no default is set. |
 | `options.filesonly?` | `boolean` | If set to true, only files are shown. If not provided, defaults to `false`. |
 | `options.foldersonly?` | `boolean` | If set to true, only folders are shown. If not provided, defaults to `false`. |
+| `options.icon?` | `string` | Optional icon to place before the input field. **Since** 1.29.14 |
 | `options.label?` | `string` | Optional text shown above the input field, with markdown formatting supported. Default is no label. |
 | `options.limit?` | `number` | Optional limit of the number of items rendered at once (useful to improve performance when displaying large lists). |
 | `options.placeholder?` | `string` | Optional placeholder text for input field; defaults to preset message. |
@@ -496,10 +537,12 @@ Shows a suggester modal and waits for the user's selection.
 | ------ | ------ | ------ |
 | `values` | `string`[] \| (`value`) => `string` | Array of strings representing the text that will be displayed for each item in the suggester prompt. This can also be a function that maps an item to its text representation. Markdown formatting is supported: optionally mix in Obsidian and plugin markdown (e.g., Iconize) to have it rendered |
 | `keys?` | `T`[] | Optional array containing the keys of each item in the correct order. If not provided or `null`, values are returned on selection. |
-| `options?` | \{ `allowCustomInput?`: `boolean`; `class?`: `string`; `default?`: `string`; `label?`: `string`; `limit?`: `number`; `placeholder?`: `string`; `rendermd?`: `boolean`; \} | Optional display options. |
+| `options?` | \{ `allowCustomInput?`: `boolean`; `class?`: `string`; `collapse?`: `boolean`; `default?`: `string`; `icon?`: `string`; `label?`: `string`; `limit?`: `number`; `placeholder?`: `string`; `rendermd?`: `boolean`; \} | Optional display options. |
 | `options.allowCustomInput?` | `boolean` | If set to `true`, the user can input a custom value that is not in the list of suggestions. Default is `false`. |
 | `options.class?` | `string` | Optional CSS class(es) to add to the component. |
+| `options.collapse?` | `boolean` | If set to `true`, the results and suggester instructions are hidden until input is provided. Default is `false`. **Since** 1.29.14 |
 | `options.default?` | `string` | Optionally pre-set the suggester's input with this value. Matching results will be shown, as if you typed in that string yourself (assuming the string appears in the list of options provided). If not provided, no default is set. |
+| `options.icon?` | `string` | Optional icon to place before the input field. **Since** 1.29.14 |
 | `options.label?` | `string` | Optional text shown above the input field, with markdown formatting supported. Default is no label. |
 | `options.limit?` | `number` | Optional limit of the number of items rendered at once (useful to improve performance when displaying large lists). |
 | `options.placeholder?` | `string` | Optional placeholder text for input field; defaults to preset message. |

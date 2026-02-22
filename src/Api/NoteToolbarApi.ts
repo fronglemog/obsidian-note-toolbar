@@ -1,8 +1,9 @@
 import NoteToolbarPlugin from "main";
 // import { testCallback } from "Api/TestCallback";
 import * as Obsidian from "obsidian";
-import { App, ItemView, MarkdownView, Menu, MenuItem, Modal, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
+import { App, Menu, MenuItem, Modal, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
 import { LocalVar, PositionType, t } from "Settings/NoteToolbarSettings";
+import { exportToCalloutById } from "Utils/ImportExport";
 import { putFocusInMenu } from "Utils/Utils";
 import INoteToolbarApi, { NtbFileSuggesterOptions, NtbMenuItem, NtbMenuOptions, NtbModalOptions, NtbPromptOptions, NtbSuggesterOptions, NtbToolbarOptions } from "./INoteToolbarApi";
 import Item from "./Item";
@@ -40,6 +41,18 @@ export default class NoteToolbarApi<T> implements INoteToolbarApi<T> {
     }
 
     /**
+     * Exports the given toolbar as a [Note Toolbar callout](https://github.com/chrisgurney/obsidian-note-toolbar/wiki/Note-Toolbar-Callouts).
+     * 
+     * @see INoteToolbarApi.export
+     */
+    async export(toolbar: Toolbar): Promise<string | null> {
+        if (toolbar.id) {
+            return await exportToCalloutById(this.ntb, toolbar.id, this.ntb.settings.export);
+        }
+        return null;
+    }
+
+    /**
      * Shows a file suggester modal and waits for the user's selection. 
      * 
      * @see INoteToolbarApi.fileSuggester
@@ -74,11 +87,17 @@ export default class NoteToolbarApi<T> implements INoteToolbarApi<T> {
                 : f.path
         );
 
+        const placeholderText = options?.placeholder 
+            ? options.placeholder 
+            : options?.filesonly 
+                ? t('api.ui.file-suggester-placeholder_file')
+                : options?.foldersonly 
+                    ? t('api.ui.file-suggester-placeholder_folder') 
+                    : t('api.ui.file-suggester-placeholder');
+    
         options = {
             limit: 9,
-            placeholder: 
-                options?.filesonly ? t('api.ui.file-suggester-placeholder_file') :
-                    options?.foldersonly ? t('api.ui.file-suggester-placeholder_folder') : t('api.ui.file-suggester-placeholder'), 
+            placeholder: placeholderText,
             ...options,
             rendermd: false
         }
@@ -149,7 +168,7 @@ export default class NoteToolbarApi<T> implements INoteToolbarApi<T> {
      * @see INoteToolbarApi.getToolbars
      */
     getToolbars(): Toolbar[] {
-        return this.ntb.settings.toolbars.map(toolbar => new Toolbar(this.ntb, toolbar));
+        return this.ntb.settings.toolbars.map(toolbar => new Toolbar(toolbar));
     }
 
     /**

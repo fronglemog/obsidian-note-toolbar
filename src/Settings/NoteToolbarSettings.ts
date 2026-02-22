@@ -2,7 +2,7 @@ import { getUUID } from "Utils/Utils";
 import { getLanguage, PaneType } from "obsidian";
 
 /* updates link to plugin's release notes and displays What's New view */
-export const WHATSNEW_VERSION = '1.28';
+export const WHATSNEW_VERSION = '1.29';
 
 /* only update when settings structure changes to trigger migrations */
 export const SETTINGS_VERSION = 20260122.1;
@@ -97,6 +97,7 @@ export const enum ViewModeType {
 	Editing = 'source',
 	Reading = 'preview'
 }
+export type ItemComponentVisibility = 'visible' | 'hidden' | 'icon' | 'label';
 export const enum PlatformType {
 	All = 'all',
 	Desktop = 'desktop',
@@ -138,6 +139,7 @@ export const enum DefaultStyleType {
 	Border = 'border',
 	Button = 'button',
 	Center = 'center',
+	Glass = 'glass',
 	Inactive = 'inactive',
 	Wide = 'wide',
 	Left = 'left',
@@ -235,6 +237,7 @@ export const enum ErrorBehavior {
 
 export interface NoteToolbarSettings {
 	debugEnabled: boolean;
+	defaultToolbar: string | null;
 	editorMenuAsToolbar: boolean;
 	editorMenuToolbar: string | null;
 	emptyViewToolbar: string | null;
@@ -259,11 +262,13 @@ export interface NoteToolbarSettings {
 	toolbarProp: string;
 	toolbars: Array<ToolbarSettings>;
 	version: number;
+	webviewerToolbar: string | null;
 	whatsnew_version: string;
 }
 
 export const DEFAULT_SETTINGS: NoteToolbarSettings = {
 	debugEnabled: false,
+	defaultToolbar: null,
 	editorMenuAsToolbar: false,
 	editorMenuToolbar: null,
 	emptyViewToolbar: null,
@@ -301,6 +306,7 @@ export const DEFAULT_SETTINGS: NoteToolbarSettings = {
 	toolbarProp: "notetoolbar",
 	toolbars: [],
 	version: SETTINGS_VERSION,
+	webviewerToolbar: null,
 	whatsnew_version: '0'
 }
 
@@ -328,24 +334,6 @@ export interface ToolbarSettings {
 	position: Position;
 	updated: string;
 }
-
-export const DEFAULT_TOOLBAR_SETTINGS: ToolbarSettings = {
-	uuid: getUUID(),
-	name: '',
-	commandPosition: PositionType.Floating,
-	customClasses: '',
-	defaultItem: null,
-	defaultStyles: [DefaultStyleType.Border, DefaultStyleType.Even, DefaultStyleType.Sticky],
-	hasCommand: false,
-	items: [],
-	mobileStyles: [],
-	position: {
-		desktop: { allViews: { position: PositionType.Props } },
-		tablet: { allViews: { position: PositionType.Props } },
-		mobile: { allViews: { position: PositionType.Props } },
-	},
-	updated: new Date().toISOString(),
-};
 
 export const EMPTY_TOOLBAR: ToolbarSettings = {
 	uuid: EMPTY_TOOLBAR_ID,
@@ -617,6 +605,7 @@ export const DEFAULT_STYLE_OPTIONS: { [key: string]: string }[] = [
 	{ [DefaultStyleType.Button]: t('setting.styles.option-button') },
     { [DefaultStyleType.Center]: t('setting.styles.option-center') },
 	{ [DefaultStyleType.Wide]: t('setting.styles.option-wide') },
+	{ [DefaultStyleType.Glass]: t('setting.styles.option-glass') },
 	{ [DefaultStyleType.Inactive]: t('setting.styles.option-inactive') },
     { [DefaultStyleType.Left]: t('setting.styles.option-left') },
     { [DefaultStyleType.Right]: t('setting.styles.option-right') },

@@ -760,10 +760,13 @@ export default class ToolbarRenderer {
 			let frontmatter = activeFile ? this.ntb.app.metadataCache.getFileCache(activeFile)?.frontmatter : undefined;
 			await this.checkAndRender(activeFile, frontmatter, toolbarView);
 		}
-		// for New tab view
+		// for New tab + Web viewer views
 		else {
-			if (this.ntb.settings.emptyViewToolbar) {
-				const toolbar = this.ntb.settingsManager.getToolbarById(this.ntb.settings.emptyViewToolbar);
+			const nonFiletoolbar = toolbarView?.getViewType() === 'webviewer' 
+				? this.ntb.settings.webviewerToolbar 
+				: this.ntb.settings.emptyViewToolbar;
+			if (nonFiletoolbar) {
+				const toolbar = this.ntb.settingsManager.getToolbarById(nonFiletoolbar);
 				const toolbarRemoved = this.removeIfNeeded(toolbar, toolbarView);
 				if (toolbar) {
 					// render the toolbar if we have one, and we don't have an existing toolbar to keep
@@ -878,7 +881,7 @@ export default class ToolbarRenderer {
 		const currentPosition = this.ntb.settingsManager.getToolbarPosition(toolbar);
 
 		// no need to run update for certain positions
-		if ([PositionType.FabLeft, PositionType.FabRight, PositionType.Hidden, undefined].includes(currentPosition)) {
+		if ([PositionType.FabLeft, PositionType.FabRight, PositionType.Hidden, PositionType.Text, undefined].includes(currentPosition)) {
 			this.ntb.debugGroupEnd();
 			return;
 		}
@@ -997,14 +1000,14 @@ export default class ToolbarRenderer {
 	 * @param toolbarPosition position of current toolbar.
 	 * @param toolbarHeight height of the current toolbar.
 	 */ 
-	updatePhoneNavigation(toolbarPosition: PositionType | undefined, toolbarHeight: number): void {
+	updatePhoneNavigation(toolbarPosition: PositionType | undefined, toolbarHeight?: number): void {
 
 		if (!Platform.isPhone || !toolbarPosition) return;
 
 		// position Obsidian Navbar above toolbar
 		const mobileNavbarEl = activeDocument.querySelector('.mobile-navbar') as HTMLElement;
 		if (mobileNavbarEl) {
-			if (toolbarPosition === PositionType.Bottom) {
+			if (toolbarPosition === PositionType.Bottom && toolbarHeight) {
 				if (!this.mobileNavbarMargin) {
 					// only calculate this once, so we don't keep adding it
 					this.mobileNavbarMargin = parseInt(activeWindow.getComputedStyle(mobileNavbarEl).marginBottom);
@@ -1019,7 +1022,7 @@ export default class ToolbarRenderer {
 		// position header bar below toolbar
 		const viewHeaderEl = activeDocument.querySelector('.view-header') as HTMLElement;
 		if (viewHeaderEl) {
-			if (toolbarPosition === PositionType.Top) {
+			if (toolbarPosition === PositionType.Top && toolbarHeight) {
 				if (!this.viewActionsHeight) {
 					// only calculate this once, so we don't keep adding it
 					this.viewActionsHeight = parseInt(activeWindow.getComputedStyle(viewHeaderEl).marginTop);
